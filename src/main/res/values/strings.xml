@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">BTConnectHelp</string>
+    <string name="action_done">Done</string>
+    <string name="action_resolve">Resolve</string>
+    <string name="ticket">Ticket</string>
+    <string name="msg_not_in_room">You have not joined the room so you will be unable to send messages.</string>
+    <string name="cancel_failed">"Unable to cancel issue."</string>
+    <string name="connecting_to_chat_server">Connecting to chat server</string>
+    <string name="joining_room">Joining room</string>
+    <string name="cancelling_issue">Cancelling issue</string>
+    <string name="get_video_chat_help">Get video chat help with Connect!</string>
+    
+    <string name="error_unable_to_create_issue">Unable to create issue</string>
+    <string name="reason_member_info_missing">Member information is missing or incomplete.</string>
+    <string name="error_unable_to_get_provider_info">Unable to retrieve provider information</string>
+
+</resources>
