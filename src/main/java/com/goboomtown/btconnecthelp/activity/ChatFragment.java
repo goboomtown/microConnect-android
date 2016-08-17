@@ -164,7 +164,7 @@ public class ChatFragment extends Fragment {
     private RelativeLayout webViewFrame = null;
     public MenuItem    mMenuItemActionDone;
 
-    private Button  mBtnGetVideoChatHelp;
+    public Button  mBtnGetVideoChatHelp;
 
     public Boolean      mInRoom;
 
@@ -234,7 +234,6 @@ public class ChatFragment extends Fragment {
                 String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s", mIssue.id);
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                 getContext().startActivity(intent);
-
             }
         });
 

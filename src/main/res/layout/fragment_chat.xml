@@ -27,7 +27,8 @@ android:padding="10dp">
         android:id="@+id/btn_get_video_chat_help"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/get_video_chat_help" />
+        android:text="@string/get_video_chat_help"
+        android:layout_alignParentTop="true"/>
 
     <LinearLayout
         android:id="@+id/panelInfo"
