@@ -27,6 +27,6 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.4.0'
     compile 'com.squareup.okhttp3:okhttp:3.2.0'
-    //compile 'com.goboomtown:microConnect-android:1.0.0'
+//    compile 'com.goboomtown:microConnect-android:1.0.0'
     compile project(':microConnect-android')
 }

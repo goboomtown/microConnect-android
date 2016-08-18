@@ -231,9 +231,14 @@ public class ChatFragment extends Fragment {
         mBtnGetVideoChatHelp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s", mIssue.id);
-                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                getContext().startActivity(intent);
+                mParent.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s", mIssue.id);
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        mParent.startActivity(intent);
+                    }
+                });
             }
         });
 
