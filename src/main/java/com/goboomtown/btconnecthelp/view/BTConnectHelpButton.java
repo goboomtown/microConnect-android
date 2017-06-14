@@ -14,6 +14,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
+import android.support.annotation.IntDef;
+import android.support.annotation.NonNull;
 import android.support.v7.appcompat.BuildConfig;
 import android.support.v7.widget.AppCompatTextView;
 import android.text.TextPaint;
@@ -28,6 +30,7 @@ import com.goboomtown.btconnecthelp.R.*;
 import com.goboomtown.btconnecthelp.activity.ChatFragment;
 import com.goboomtown.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.btconnecthelp.model.BTConnectIssue;
+import com.goboomtown.btconnecthelp.service.BoomtownDNSSDService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -64,6 +67,8 @@ public class BTConnectHelpButton extends View {
     private String  microConnectVersion;
     private String  osVersion;
     private Context mContext;
+
+    private BoomtownDNSSDService nsdSvc;
 
     public interface BTConnectHelpButtonListener {
         public void helpButtonDidFailWithError(String description, String reason);
@@ -246,6 +251,8 @@ public class BTConnectHelpButton extends View {
 
         // Update TextPaint and text measurements from attributes
         invalidateTextPaintAndMeasurements();
+        // create NSD instance
+        nsdSvc = BoomtownDNSSDService.getInstance(mContext);
     }
 
     private void invalidateTextPaintAndMeasurements() {
@@ -548,7 +555,9 @@ public class BTConnectHelpButton extends View {
                         message = jsonObject.optString("message");
                     }
                 } catch (JSONException e) {
-                    e.printStackTrace();
+                    Log.e(TAG, Log.getStackTraceString(e));
+                } catch (NullPointerException npe) {
+                    Log.e(TAG, Log.getStackTraceString(npe));
                 }
 
                 if (success) {
@@ -562,6 +571,27 @@ public class BTConnectHelpButton extends View {
          });
     }
 
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (View.VISIBLE == getVisibility()) {
+            nsdSvc.start();
+        }
+    }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        nsdSvc.tearDown();
+    }
 
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        if (changedView.getClass().getSimpleName() == BTConnectHelpButton.class.getSimpleName()
+                && View.VISIBLE == visibility
+                && !nsdSvc.isSvcRegistered()) {
+            nsdSvc.start();
+        }
+    }
 }
