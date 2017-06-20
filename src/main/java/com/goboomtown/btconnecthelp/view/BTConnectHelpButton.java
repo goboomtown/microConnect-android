@@ -13,32 +13,26 @@ import android.graphics.Paint;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
-import android.provider.MediaStore;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.v7.appcompat.BuildConfig;
-import android.support.v7.widget.AppCompatTextView;
 import android.text.TextPaint;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.widget.TextView;
 
 import com.goboomtown.btconnecthelp.R;
 import com.goboomtown.btconnecthelp.R.*;
 import com.goboomtown.btconnecthelp.activity.ChatFragment;
 import com.goboomtown.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.btconnecthelp.model.BTConnectIssue;
-import com.goboomtown.btconnecthelp.service.BoomtownDNSSDService;
+import com.goboomtown.dnssd.BTConnectPresenceService;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.net.URL;
-import java.util.List;
+import java.util.Map;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -51,8 +45,8 @@ public class BTConnectHelpButton extends View {
 
     private static final String TAG = BTConnectHelpButton.class.getSimpleName();
 
-    private static final String BTConnectHelpErrorDomain  = "com.goboomtown.btconnecthelp";
-    private static final String BTConnectHelpName         = "microConnect";
+    private static final String BTConnectHelpErrorDomain = "com.goboomtown.btconnecthelp";
+    private static final String BTConnectHelpName = "microConnect";
 
     private String mExampleString; // TODO: use a default from R.string...
     private int mExampleColor = Color.RED; // TODO: use a default from R.color...
@@ -63,58 +57,68 @@ public class BTConnectHelpButton extends View {
     private float mTextWidth;
     private float mTextHeight;
 
-    private String  providerId;
-    private String  microConnectVersion;
-    private String  osVersion;
+    private String providerId;
+    private String microConnectVersion;
+    private String osVersion;
     private Context mContext;
 
-    private BoomtownDNSSDService nsdSvc;
+    private BTConnectPresenceService mDNSSvc;
+    private boolean mDNSSvcEnabled;
+    private BTConnectPresenceService.ServiceAdvertisementListener mDNSSvcListener;
 
     public interface BTConnectHelpButtonListener {
         public void helpButtonDidFailWithError(String description, String reason);
+
         public void helpButtonDidSetCredentials();
+
         public void helpButtonDisplayChatFragment(ChatFragment chatFragment);
+
         public void helpButtonRemoveChatFragment();
+
         public void helpButtonSetChatTitle(String title);
+
+        public void helpButtonDidAdvertiseService();
+
+        public void helpButtonDidFailToAdvertiseService();
     }
 
     private BTConnectHelpButtonListener mListener;
 
     /**
- Website URL the help button will take the user to.
+     * Website URL the help button will take the user to.
+     * <p>
+     * If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
+     */
+    public Uri supportWebsiteURL;
 
- If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
- */
-    public  Uri     supportWebsiteURL;
+    /**
+     * Email address the help button will send email to.
+     * <p>
+     * If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
+     */
+    public String supportEmailAddress;
 
-/**
- Email address the help button will send email to.
+    /**
+     * Phone number the help button will call.
+     * <p>
+     * If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
+     */
+    public String supportPhoneNumber;
 
- If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
- */
-    public  String  supportEmailAddress;
+    /**
+     * The ID of the member (also referred to as teh merchant)
+     */
+    public String memberID;
 
-/**
- Phone number the help button will call.
+    /**
+     * The ID of the member user
+     */
+    public String memberUserID;
 
- If not null this will be populated by the setCredentialsWithToken:secret: method from the current provider information
- */
-    public  String  supportPhoneNumber;
-
-/**
- The ID of the member (also referred to as teh merchant)
- */
-    public  String  memberID;
-
-/**
- The ID of the member user
- */
-    public  String	memberUserID;
-
-/**
- The ID of the member user's location
- */
-    public  String	memberLocationID;
+    /**
+     * The ID of the member user's location
+     */
+    public String memberLocationID;
 
 
     public BTConnectHelpButton(Context context) {
@@ -142,16 +146,15 @@ public class BTConnectHelpButton extends View {
 
     /**
      * Set credentials for API requests
-     * @param token     the API token provided by Boomtown
-     * @param secret    the API secret provided by Boomtown
+     *
+     * @param token  the API token provided by Boomtown
+     * @param secret the API secret provided by Boomtown
      */
-    public void setCredentials(String token, String secret)
-    {
+    public void setCredentials(String token, String secret) {
         BTConnectAPI.setCredentials(token, secret);
 
-        if ( memberID==null || memberUserID==null ||  memberLocationID==null )
-        {
-            if ( mListener != null ) {
+        if (memberID == null || memberUserID == null || memberLocationID == null) {
+            if (mListener != null) {
                 mListener.helpButtonDidFailWithError(
                         mContext.getString(R.string.error_unable_to_create_issue),
                         mContext.getString(string.reason_member_info_missing)
@@ -159,13 +162,13 @@ public class BTConnectHelpButton extends View {
             }
         }
 
-        BTConnectAPI.sharedInstance().membersId             = memberID;
-        BTConnectAPI.sharedInstance().membersUsersId        = memberUserID;
-        BTConnectAPI.sharedInstance().membersLocationsId    = memberLocationID;
+        BTConnectAPI.sharedInstance().membersId = memberID;
+        BTConnectAPI.sharedInstance().membersUsersId = memberUserID;
+        BTConnectAPI.sharedInstance().membersLocationsId = memberLocationID;
 
-        int versionCode     = BuildConfig.VERSION_CODE;
-        String versionName  = BuildConfig.VERSION_NAME;
-        PackageManager manager =  getContext().getPackageManager();
+        int versionCode = BuildConfig.VERSION_CODE;
+        String versionName = BuildConfig.VERSION_NAME;
+        PackageManager manager = getContext().getPackageManager();
         PackageInfo info = null;
         try {
             info = manager.getPackageInfo(getContext().getPackageName(), 0);
@@ -173,7 +176,7 @@ public class BTConnectHelpButton extends View {
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        osVersion = String.format("Android %s (API %d)", Build.VERSION.RELEASE,Build.VERSION.SDK_INT);
+        osVersion = String.format("Android %s (API %d)", Build.VERSION.RELEASE, Build.VERSION.SDK_INT);
 
         getProvider();
     }
@@ -194,14 +197,13 @@ public class BTConnectHelpButton extends View {
     }
 
     public void removeChat() {
-        if ( mListener != null ) {
+        if (mListener != null) {
             mListener.helpButtonRemoveChatFragment();
         }
     }
 
 
-    private String clientAppIdentifier()
-    {
+    private String clientAppIdentifier() {
         //  microConnect 1.11, iOS 9.7.1 [ABC-123]
         return String.format("%s %s, %s", BTConnectHelpName, microConnectVersion, osVersion);
     }
@@ -221,7 +223,7 @@ public class BTConnectHelpButton extends View {
 
         mExampleString = a.getString(
                 R.styleable.BTConnectHelpButton_exampleString);
-        if ( mExampleString == null )
+        if (mExampleString == null)
             mExampleString = "";
         mExampleColor = a.getColor(
                 R.styleable.BTConnectHelpButton_exampleColor,
@@ -236,8 +238,7 @@ public class BTConnectHelpButton extends View {
             mExampleDrawable = a.getDrawable(
                     R.styleable.BTConnectHelpButton_exampleDrawable);
             mExampleDrawable.setCallback(this);
-        }
-        else {
+        } else {
             mExampleDrawable = getResources().getDrawable(drawable.help_slider_gear_light);
             mExampleDrawable.setCallback(this);
         }
@@ -251,8 +252,6 @@ public class BTConnectHelpButton extends View {
 
         // Update TextPaint and text measurements from attributes
         invalidateTextPaintAndMeasurements();
-        // create NSD instance
-        nsdSvc = BoomtownDNSSDService.getInstance(mContext);
     }
 
     private void invalidateTextPaintAndMeasurements() {
@@ -262,34 +261,6 @@ public class BTConnectHelpButton extends View {
 
         Paint.FontMetrics fontMetrics = mTextPaint.getFontMetrics();
         mTextHeight = fontMetrics.bottom;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
-        // TODO: consider storing these as member variables to reduce
-        // allocations per draw cycle.
-        int paddingLeft = getPaddingLeft();
-        int paddingTop = getPaddingTop();
-        int paddingRight = getPaddingRight();
-        int paddingBottom = getPaddingBottom();
-
-        int contentWidth = getWidth() - paddingLeft - paddingRight;
-        int contentHeight = getHeight() - paddingTop - paddingBottom;
-
-        // Draw the text.
-        canvas.drawText(mExampleString,
-                paddingLeft + (contentWidth - mTextWidth) / 2,
-                paddingTop + (contentHeight + mTextHeight) / 2,
-                mTextPaint);
-
-        // Draw the example drawable on top of the text.
-        if (mExampleDrawable != null) {
-            mExampleDrawable.setBounds(paddingLeft, paddingTop,
-                    paddingLeft + contentWidth, paddingTop + contentHeight);
-            mExampleDrawable.draw(canvas);
-        }
     }
 
     /**
@@ -371,22 +342,73 @@ public class BTConnectHelpButton extends View {
         mExampleDrawable = exampleDrawable;
     }
 
-
-    public void setListener(BTConnectHelpButtonListener listener)
-    {
+    public void setListener(BTConnectHelpButtonListener listener) {
         mListener = listener;
     }
 
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
 
-    private void showHelpDialog()
-    {
-        final CharSequence[] items = { "Chat with Us", "Web Support", "Email Support", "Phone Support", "Cancel" };
+        // TODO: consider storing these as member variables to reduce
+        // allocations per draw cycle.
+        int paddingLeft = getPaddingLeft();
+        int paddingTop = getPaddingTop();
+        int paddingRight = getPaddingRight();
+        int paddingBottom = getPaddingBottom();
+
+        int contentWidth = getWidth() - paddingLeft - paddingRight;
+        int contentHeight = getHeight() - paddingTop - paddingBottom;
+
+        // Draw the text.
+        canvas.drawText(mExampleString,
+                paddingLeft + (contentWidth - mTextWidth) / 2,
+                paddingTop + (contentHeight + mTextHeight) / 2,
+                mTextPaint);
+
+        // Draw the example drawable on top of the text.
+        if (mExampleDrawable != null) {
+            mExampleDrawable.setBounds(paddingLeft, paddingTop,
+                    paddingLeft + contentWidth, paddingTop + contentHeight);
+            mExampleDrawable.draw(canvas);
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if ((mDNSSvc != null) && mDNSSvcEnabled && !mDNSSvc.isSvcRegistered() && View.VISIBLE == getVisibility()) {
+            mDNSSvc.start();
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mDNSSvcEnabled) {
+            mDNSSvc.tearDown();
+        }
+    }
+
+    @Override
+    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
+        super.onVisibilityChanged(changedView, visibility);
+        if (changedView.getClass().getSimpleName() == BTConnectHelpButton.class.getSimpleName()
+                && !(View.GONE == visibility || View.INVISIBLE == visibility)
+                && (mDNSSvc != null) && mDNSSvcEnabled
+                && !mDNSSvc.isSvcRegistered()) {
+            mDNSSvc.start();
+        }
+    }
+
+    private void showHelpDialog() {
+        final CharSequence[] items = {"Chat with Us", "Web Support", "Email Support", "Phone Support", "Cancel"};
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle("Select");
         builder.setItems(items, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int item) {
-                switch( item ) {
+                switch (item) {
                     case 0:
                         createIssue(memberID, memberUserID, memberLocationID);
                         break;
@@ -408,11 +430,7 @@ public class BTConnectHelpButton extends View {
             }
         });
         AlertDialog dialog = builder.show();
-//        AppCompatTextView messageText = (AppCompatTextView)dialog.findViewById(android.R.id.message);
-//        messageText.setGravity(Gravity.CENTER);
-//        dialog.setView(messageText);
     }
-
 
     private void visitWebsite() {
         Intent intent = new Intent(Intent.ACTION_VIEW, supportWebsiteURL);
@@ -420,11 +438,11 @@ public class BTConnectHelpButton extends View {
     }
 
     private void sendEmail() {
-        if ( supportEmailAddress.isEmpty() )
+        if (supportEmailAddress.isEmpty())
             return;
 
         Intent emailIntent = new Intent(Intent.ACTION_SEND);
-        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{ supportEmailAddress});
+        emailIntent.putExtra(Intent.EXTRA_EMAIL, new String[]{supportEmailAddress});
 
         //need this to prompts email client only
         emailIntent.setType("message/rfc822");
@@ -432,18 +450,16 @@ public class BTConnectHelpButton extends View {
         getContext().startActivity(Intent.createChooser(emailIntent, "Select an Email Client:"));
     }
 
-
     private void phone() {
         String permission = "android.permission.CALL_PHONE";
         int res = getContext().checkCallingOrSelfPermission(permission);
-        if (res == PackageManager.PERMISSION_GRANTED ) {
+        if (res == PackageManager.PERMISSION_GRANTED) {
             Intent intent = new Intent(Intent.ACTION_CALL);
 
             intent.setData(Uri.parse("tel:" + supportPhoneNumber));
             getContext().startActivity(intent);
         }
     }
-
 
     private void createIssue(String members_id, String members_users_id, String members_locations_id) {
         String clientAppIdentifier = clientAppIdentifier();
@@ -506,15 +522,14 @@ public class BTConnectHelpButton extends View {
         });
     }
 
-     private void getProvider()
-     {
-         String uri = String.format("%s/providers/get", BTConnectAPI.kEndpoint);
+    private void getProvider() {
+        String uri = String.format("%s/providers/get", BTConnectAPI.kEndpoint);
 
-         BTConnectAPI.get(getContext(), uri, new Callback() {
+        BTConnectAPI.get(getContext(), uri, new Callback() {
 
             @Override
             public void onFailure(Call call, IOException e) {
-                if ( mListener != null )
+                if (mListener != null)
                     mListener.helpButtonDidFailWithError(mContext.getString(string.error_unable_to_get_provider_info), e.getLocalizedMessage());
             }
 
@@ -527,27 +542,26 @@ public class BTConnectHelpButton extends View {
                     JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                     if (jsonObject instanceof JSONObject) {
                         JSONArray resultsArray = jsonObject.optJSONArray("results");
-                        if ( resultsArray instanceof JSONArray ) {
+                        if (resultsArray instanceof JSONArray) {
                             JSONObject provider = resultsArray.optJSONObject(0);
-                            if ( provider instanceof JSONObject )
-                            {
+                            if (provider instanceof JSONObject) {
                                 success = true;
                                 providerId = provider.optString("id");
-                                if ( provider.has("website") ) {
+                                if (provider.has("website")) {
                                     try {
                                         String url = provider.getString("website");
-                                        if ( !url.startsWith("http") )
+                                        if (!url.startsWith("http"))
                                             url = "http://" + url;
                                         supportWebsiteURL = Uri.parse(url);
                                     } catch (JSONException e) {
                                         e.printStackTrace();
                                     }
                                 }
-                                if ( provider.has("email") ) {
+                                if (provider.has("email")) {
                                     supportEmailAddress = provider.getString("email");
                                 }
-                                if ( provider.has("phone") ) {
-                                        supportPhoneNumber = provider.getString("phone");
+                                if (provider.has("phone")) {
+                                    supportPhoneNumber = provider.getString("phone");
                                 }
                             }
                         }
@@ -556,42 +570,75 @@ public class BTConnectHelpButton extends View {
                     }
                 } catch (JSONException e) {
                     Log.e(TAG, Log.getStackTraceString(e));
+                    message = e.getLocalizedMessage();
                 } catch (NullPointerException npe) {
                     Log.e(TAG, Log.getStackTraceString(npe));
+                    message = npe.getLocalizedMessage();
                 }
 
                 if (success) {
-                    if ( mListener != null )
+                    if (mListener != null)
                         mListener.helpButtonDidSetCredentials();
                 } else {
-                    if ( mListener != null )
+                    if (mListener != null)
                         mListener.helpButtonDidFailWithError(mContext.getString(string.error_unable_to_get_provider_info), message);
                 }
             }
-         });
+        });
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        super.onAttachedToWindow();
-        if (View.VISIBLE == getVisibility()) {
-            nsdSvc.start();
+    /**
+     *
+     * Advertise the microConnect service via mDNS
+     *
+     * @param publicData The contents of publicData will be available in the TXT record in clear text, using the key(s) provided in the map.
+     * @param dataToEncrypt The contents of dataToEncrypt will be available as an encrypted string using the key(s) provided in the map.
+     */
+    public void advertiseServiceWithPublicData(Map<String, String> publicData, Map<String, String> dataToEncrypt) {
+        mDNSSvcEnabled = true;
+        // create NSD instance
+        if (mDNSSvcListener == null) {
+            mDNSSvcListener = new BTConnectPresenceService.ServiceAdvertisementListener() {
+                @Override
+                public void didAdvertiseService() {
+                    if (mListener == null) {
+                        return;
+                    }
+                    mListener.helpButtonDidAdvertiseService();
+                }
+
+                @Override
+                public void didFailToAdvertiseService() {
+                    if (mListener == null) {
+                        return;
+                    }
+                    mListener.helpButtonDidFailToAdvertiseService();
+                }
+            };
         }
-    }
-
-    @Override
-    protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow();
-        nsdSvc.tearDown();
-    }
-
-    @Override
-    protected void onVisibilityChanged(@NonNull View changedView, int visibility) {
-        super.onVisibilityChanged(changedView, visibility);
-        if (changedView.getClass().getSimpleName() == BTConnectHelpButton.class.getSimpleName()
-                && View.VISIBLE == visibility
-                && !nsdSvc.isSvcRegistered()) {
-            nsdSvc.start();
+        mDNSSvc = BTConnectPresenceService.getInstance(mContext);
+        mDNSSvc.addAdvertisementListener(mDNSSvcListener);
+        if (publicData != null) {
+            for (String k : publicData.keySet()) {
+                mDNSSvc.addCustomPayloadData(k, publicData.get(k), false);
+            }
         }
+        if (dataToEncrypt != null) {
+            for (String k : dataToEncrypt.keySet()) {
+                mDNSSvc.addCustomPayloadData(k, dataToEncrypt.get(k), true);
+            }
+        }
+        mDNSSvc.start();
+    }
+
+    /**
+     * Stop advertising mDNS data.
+     */
+    public void stopAdvertiseServiceWithPublicData() {
+        if (!mDNSSvcEnabled) {
+            return;
+        }
+        mDNSSvc.tearDown();
+        mDNSSvcEnabled = false;
     }
 }

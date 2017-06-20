@@ -1,15 +1,14 @@
 apply plugin: 'idea'
 
 group = 'com.goboomtown'
-version = '1.0.0'
+version = '1.1.0'
 
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.1.0'
-        classpath 'com.github.dcendents:android-maven-gradle-plugin:1.3'
+        classpath 'com.android.tools.build:gradle:2.3.2'
         classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1"
     }
 }
@@ -19,17 +18,16 @@ repositories {
 }
 
 apply plugin: 'com.android.library'
-apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.jfrog.bintray'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.3"
-//    resourcePrefix "goboomtown__"
+    compileSdkVersion 25
+    buildToolsVersion '25.0.3'
+    // resourcePrefix "goboomtown__"
 
     defaultConfig {
         minSdkVersion 19
-        targetSdkVersion 23
+        targetSdkVersion 25
         versionCode 1
         versionName "1.0"
     }
@@ -41,10 +39,8 @@ android {
         }
     }
 
-//    org.gradle.api.tasks.compile.CompileOptions {
-//        sourceCompatibility JavaVersion.VERSION_1_7
-//        targetCompatibility JavaVersion.VERSION_1_7
-//    }
+    aaptOptions.cruncherEnabled = false
+    aaptOptions.useNewCruncher = false
 
     // Rename the aar correctly
     libraryVariants.all { variant ->
@@ -73,7 +69,7 @@ ext {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
-    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:appcompat-v7:25.3.0'
     compile 'com.squareup.okhttp3:okhttp:3.2.0'
     compile "io.swagger:swagger-annotations:$swagger_annotations_version"
     compile ("org.glassfish.jersey.core:jersey-client:$jersey_version") {
@@ -114,44 +110,6 @@ android.packagingOptions {
 def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library
 def gitUrl = 'https://github.com/goboomtown/microConnect-android.git'   // Git repository URL
 
-install {
-    repositories.mavenInstaller {
-        // This generates POM.xml with proper parameters
-        pom {
-            project {
-                // Add your description here
-                name    "microConnect"
-                description 'An Android library that allows Connect partners to integrate issue creation, notification, and chat in a single button.'
-                url 'https://github.com/goboomtown/microConnect-android.git'
-
-                packaging 'aar'
-                group = "com.goboomtown"                                        // Maven Group ID for the artifact
-
-                // Set your license
-                licenses {
-                    license {
-                        name 'The Apache Software License, Version 2.0'
-                        url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-                    }
-                }
-                developers {
-                    developer {
-                        id 'lborsato'
-                        name 'Larry Borsato'
-                        email 'larry@larryborsato.com'
-                    }
-                }
-                scm {
-                    connection 'https://github.com/goboomtown/microConnect-android.git'
-                    developerConnection 'https://github.com/goboomtown/microConnect-android.git'
-                    url 'https://github.com/goboomtown/microConnect-android.git'
-
-                }
-            }
-        }
-    }
-}
-
 task sourcesJar(type: Jar) {
     from android.sourceSets.main.java.srcDirs
     classifier = 'sources'
@@ -165,8 +123,9 @@ task javadoc(type: Javadoc) {
 task javadocJar(type: Jar, dependsOn: javadoc) {
     classifier = 'javadoc'
     from javadoc.destinationDir
-//    options.encoding = 'UTF-8'
+    // options.encoding = 'UTF-8'
 }
+
 artifacts {
     archives javadocJar
     archives sourcesJar
@@ -192,14 +151,3 @@ bintray {
         }
     }
 }
-
-//publishing {
-//    publications {
-//        microConnect-android(MavenPublication) {
-//            from components.java
-//            groupId 'org.jfrog.gradle.sample'
-//            artifactId 'gradle-project'
-//            version '1.1'
-//        }
-//    }
-//}

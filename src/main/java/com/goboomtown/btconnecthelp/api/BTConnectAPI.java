@@ -63,7 +63,7 @@ public class BTConnectAPI {
     private String  apiToken  = null;
     private String  apiSecret = null;
 
-    private static String encode(String data) throws Exception {
+    public static String encode(String data) throws Exception {
         Mac sha256_HMAC = null;
         String signature = null;
         try {

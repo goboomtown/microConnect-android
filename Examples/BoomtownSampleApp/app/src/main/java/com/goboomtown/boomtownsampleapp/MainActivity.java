@@ -11,6 +11,9 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.goboomtown.btconnecthelp.activity.ChatFragment;
 import com.goboomtown.btconnecthelp.view.BTConnectHelpButton;
 
@@ -19,6 +22,8 @@ import java.net.URL;
 
 public class MainActivity extends AppCompatActivity
         implements BTConnectHelpButton.BTConnectHelpButtonListener {
+
+    public static final String TAG = "MainActivity";
 
     private BTConnectHelpButton mHelpButton;
     private FrameLayout         mFragmentContainer;
@@ -41,6 +46,25 @@ public class MainActivity extends AppCompatActivity
         mHelpButton.supportPhoneNumber 	= "1-888-555-2368";
 
         mHelpButton.setCredentials("31211E2CC0A30F98ABBD","0a46f159dc5a846d3fa7cf7024adb2248a8bc8ed");
+
+        Map<String, String> myPubData = new HashMap<String, String>();
+        myPubData.put("public", "fooData");
+        Map<String, String> myPrivData = new HashMap<String, String>();
+        myPrivData.put("private", "someEncryptedData");
+
+        mHelpButton.advertiseServiceWithPublicData(myPubData, myPrivData);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.v(TAG, "onResume complete");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.v(TAG, "onPause complete");
     }
 
     @Override
@@ -95,4 +119,15 @@ public class MainActivity extends AppCompatActivity
         mFragmentContainer.setVisibility(View.GONE);
         setTitle(getString(R.string.app_name));
     }
+
+    @Override
+    public void helpButtonDidAdvertiseService() {
+        Log.i(TAG, "service advertised successfully");
+    }
+
+    @Override
+    public void helpButtonDidFailToAdvertiseService() {
+        Log.i(TAG, "error when advertising service");
+    }
+
 }
