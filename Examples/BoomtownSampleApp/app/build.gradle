@@ -31,6 +31,6 @@ dependencies {
         exclude module: 'support-v4'
     }
     compile 'com.squareup.okhttp3:okhttp:3.2.0'
-    // compile 'com.goboomtown:microConnect-android:1.1.1'
-    compile project(':microConnect-android')
+    compile project(':microConnect-aar')
+    // compile project(':microConnect-android')
 }

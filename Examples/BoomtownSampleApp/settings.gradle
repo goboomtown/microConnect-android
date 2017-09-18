@@ -1,3 +1,7 @@
-include ':app', ':microConnect-android'
+include ':app'
+
+include ':microConnect-android'
 project(":microConnect-android").projectDir = new File(settingsDir, "../../../microConnect-android")
 
+include ':microConnect-aar'
+project(":microConnect-aar").projectDir = new File(settingsDir, "./microConnect-aar")
