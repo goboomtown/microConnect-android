@@ -1,0 +1,2 @@
+include ':microConnect-btsampleapp'
+project(":microConnect-btsampleapp").projectDir = new File(settingsDir, "Examples/BoomtownSampleApp")
