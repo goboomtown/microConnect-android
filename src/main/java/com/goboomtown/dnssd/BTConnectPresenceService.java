@@ -129,7 +129,7 @@ public class BTConnectPresenceService {
 
     /**
      * Gets singleton instance of this class.
-     * 0
+     *
      * @param context
      * @return
      * @throws IllegalStateException with null context
@@ -256,9 +256,15 @@ public class BTConnectPresenceService {
         svcRegistering = true;
         svcRegistered = false;
         NsdServiceInfo serviceInfo = buildDNSSDServiceInfo(port);
-        mNsdManager = (NsdManager) ctx.getSystemService(Context.NSD_SERVICE);
-        mNsdManager.registerService(
-                serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
+        Log.v(TAG, "registering NSD with service info: " + serviceInfo);
+        try {
+            mNsdManager.registerService(
+                    serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
+        } catch (Exception e) {
+            svcRegistering = false;
+            Log.w(TAG, "Error starting mDNS services\n" + Log.getStackTraceString(e));
+        }
+        Log.v(TAG, "registerDNSSDService finished");
     }
 
     /**
@@ -310,13 +316,12 @@ public class BTConnectPresenceService {
                 // Save the service name.  Android may have changed it in order to
                 // resolve a conflict, so update the name you initially requested
                 // with the name Android actually used.
-                serviceName = serviceInfo.getServiceName();
                 svcRegistering = false;
                 svcRegistered = true;
                 // log success
                 StringBuilder logMsg = new StringBuilder();
-                logMsg.append("DSNSD service registration success!  serviceInfo{} ");
-                if (null != logMsg) {
+                logMsg.append("DSNSD service registration success!  serviceInfo {}");
+                if (serviceInfo != null) {
                     logMsg.append(" name=").append(serviceInfo.getServiceName())
                             .append(", port=")
                             .append(serviceInfo.getPort())
@@ -324,7 +329,7 @@ public class BTConnectPresenceService {
                             .append(serviceInfo.getServiceType())
                             .append(", host=" + serviceInfo.getHost());
                 } else {
-                    logMsg.append(" = null");
+                    logMsg.append("=null");
                 }
                 Log.i(TAG, logMsg.toString());
                 // notify listeners
@@ -337,8 +342,8 @@ public class BTConnectPresenceService {
                 svcRegistering = false;
                 svcRegistered = false;
                 StringBuilder logMsg = new StringBuilder();
-                logMsg.append("DSNSD service registration failed, serviceInfo{} ");
-                if (null != logMsg) {
+                logMsg.append("DSNSD service registration failed, serviceInfo {}");
+                if (serviceInfo != null) {
                     logMsg.append(" name=").append(serviceInfo.getServiceName())
                             .append(", port=")
                             .append(serviceInfo.getPort())
@@ -346,7 +351,7 @@ public class BTConnectPresenceService {
                             .append(serviceInfo.getServiceType())
                             .append(", host=" + serviceInfo.getHost());
                 } else {
-                    logMsg.append(" = null");
+                    logMsg.append("=null");
                 }
                 logMsg.append(", errorCode=" + errorCode);
                 Log.e(TAG, logMsg.toString());
@@ -359,7 +364,11 @@ public class BTConnectPresenceService {
                 // service unregistered.  Only happens when NsdManager.unregisterService() invoked with this listener.
                 svcRegistering = false;
                 svcRegistered = false;
-                Log.i(TAG, "DSNSD service unregistered, serviceInfo.name=" + (null != serviceInfo ? serviceInfo.getServiceName() : "null"));
+                if (serviceInfo == null) {
+                    Log.w(TAG, "oops!  DSNSD service unregistered but service info is empty!");
+                    return;
+                }
+                Log.i(TAG, "DSNSD service unregistered, serviceInfo.name=" + serviceInfo.getServiceName());
             }
 
             @Override
@@ -368,8 +377,8 @@ public class BTConnectPresenceService {
                 svcRegistering = false;
                 svcRegistered = false;
                 StringBuilder errMsg = new StringBuilder();
-                errMsg.append("DSNSD service un-registration failed, serviceInfo{} ");
-                if (null != errMsg) {
+                errMsg.append("DSNSD service un-registration failed, serviceInfo {}");
+                if (serviceInfo != null) {
                     errMsg.append(" name=").append(serviceInfo.getServiceName())
                             .append(", port=")
                             .append(serviceInfo.getPort())
@@ -377,7 +386,7 @@ public class BTConnectPresenceService {
                             .append(serviceInfo.getServiceType())
                             .append(", host=" + serviceInfo.getHost());
                 } else {
-                    errMsg.append(" = null");
+                    errMsg.append("=null");
                 }
                 errMsg.append(", errorCode=" + errorCode);
                 Log.e(TAG, errMsg.toString());
