@@ -3,29 +3,19 @@ package com.goboomtown.btconnecthelp.activity;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.CursorLoader;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.MediaStore;
-import android.support.annotation.BoolRes;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.Editable;
@@ -44,14 +34,11 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.goboomtown.btconnecthelp.R;
 import com.goboomtown.btconnecthelp.api.BTConnectAPI;
@@ -79,18 +66,19 @@ import okhttp3.Callback;
 import okhttp3.Response;
 
 /**
- * Created by Larry Borsato on 2016-07-12.
- */
-
-/**
- * A simple {@link Fragment} subclass.
+ * A simple {@link android.app.Fragment} subclass.
  * Activities that contain this fragment must implement the
  * {@link ChatFragment.OnFragmentInteractionListener} interface
  * to handle interaction events.
  * Use the {@link ChatFragment#newInstance} factory method to
  * create an instance of this fragment.
+ *
+ * Created by Larry Borsato on 2016-07-12.
  */
 public class ChatFragment extends Fragment {
+
+    public static final String TAG = ChatFragment.class.getSimpleName();
+
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -320,7 +308,7 @@ public class ChatFragment extends Fragment {
      * fragment to allow an interaction in this fragment to be communicated
      * to the activity and potentially other fragments contained in that
      * activity.
-     * <p/>
+     *
      * See the Android Training lesson <a href=
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
@@ -867,7 +855,7 @@ public class ChatFragment extends Fragment {
         try {
             params.put("members_users_id", BTConnectAPI.sharedInstance().membersUsersId);
         } catch (JSONException e) {
-            e.printStackTrace();
+            Log.e(TAG, Log.getStackTraceString(e));
         }
         BTConnectAPI.post(getContext(), uri, params, new Callback() {
 
