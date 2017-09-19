@@ -1,7 +1,0 @@
-include ':app'
-
-include ':microConnect-android'
-project(":microConnect-android").projectDir = new File(settingsDir, "../../../microConnect-android")
-
-include ':microConnect-aar'
-project(":microConnect-aar").projectDir = new File(settingsDir, "./microConnect-aar/microConnect-android-release-1.1.1.aar")

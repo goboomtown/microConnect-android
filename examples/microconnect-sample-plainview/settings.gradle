@@ -1,0 +1,2 @@
+include ':microconnect-aar'
+project(":microconnect-aar").projectDir = new File(settingsDir, "microconnect-aar")

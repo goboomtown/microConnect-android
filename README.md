@@ -57,15 +57,15 @@ For chat to work, **microConnect-android** requires you specify the member and u
 
 A `BTConnectHelpButton` can be added to your app using an XML layout file or programmatically, as shown in this screenshot from one of the included example apps.
 
-![screenshot example initial view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Sample%20Initial%20View.png" alt="a screenshot of initial view provided by this component" width="450" />
+![screenshot example initial view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Sample%20Initial%20View.png" alt="a screenshot of initial view provided by this component" width="450" />
 
 Tapping the `BTConnectHelpButton` will take your user to the Help view.
 
-![screenshot help view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Help%20View.png" alt="a screenshot of the help view provided by this component" width="450" />
+![screenshot help view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Connect%20Help%20View.png" alt="a screenshot of the help view provided by this component" width="450" />
 
 From the Help view, the user may tap the buttons for chat, web, e-mail, or phone support. If the user taps "Chat With Us," an issue will be created for him/her, and he/she will be taken to a chat room associated with that issue.
 
-![screenshot chat view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Chat%20View.png" alt="a screenshot of the chat view provided by this component" width="450" />
+![screenshot chat view]<img src="https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Connect%20Chat%20View.png" alt="a screenshot of the chat view provided by this component" width="450" />
 
 ### Usage
 
@@ -219,6 +219,6 @@ gradle build -x javadoc -x lint
 **microConnect-android** uses Smack (http://www.igniterealtime.org/projects/smack/), and we are grateful for the contributions of the open source community.
 
 [connectLink]:http://www.goboomtown.com/connect/
-[imgLinkChatView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Chat%20View.png
-[imgLinkHelpView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Connect%20Help%20View.png
-[imgLinkInitialView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/Examples/Images/Sample%20Initial%20View.png
+[imgLinkChatView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Connect%20Chat%20View.png
+[imgLinkHelpView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Connect%20Help%20View.png
+[imgLinkInitialView]:https://raw.githubusercontent.com/goboomtown/microConnect-android/master/dist/images/Sample%20Initial%20View.png

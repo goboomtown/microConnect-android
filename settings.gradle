@@ -1,2 +1,7 @@
-include ':microConnect-btsampleapp'
-project(":microConnect-btsampleapp").projectDir = new File(settingsDir, "Examples/BoomtownSampleApp")
+include ':library'
+
+include ':microconnect-sample-plainview'
+project(":microconnect-sample-plainview").projectDir = new File(settingsDir, "examples/microconnect-sample-plainview")
+
+include ':microconnect-aar'
+project(":microconnect-aar").projectDir = new File(settingsDir, "examples/microconnect-sample-plainview/microconnect-aar")

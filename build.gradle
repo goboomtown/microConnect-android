@@ -1,6 +1,4 @@
-apply plugin: 'idea'
-
-group = 'com.goboomtown'
+// Top-level build file with configuration options common to all sub-projects/modules.
 
 buildscript {
     repositories {
@@ -12,60 +10,24 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1"
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
     }
 }
 
-repositories {
-    jcenter()
-    mavenCentral()
-    maven {
-        url "https://maven.google.com"
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url "https://maven.google.com"
+        }
     }
 }
 
-apply plugin: 'com.android.library'
-apply plugin: 'com.jfrog.bintray'
-
-def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library
-def gitUrl = 'https://github.com/goboomtown/microConnect-android.git'   // Git repository URL
-
-android {
-    def versionMajor = 1
-    def versionMinor = 1
-    def versionPatch = 1
-
-    compileSdkVersion 26
-    buildToolsVersion '26.0.1'
-    // resourcePrefix "goboomtown__"
-
-    defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 26
-        versionName "${versionMajor}.${versionMinor}.${versionPatch}"
-        versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
-    }
-    buildTypes {
-        release {
-            shrinkResources false
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-        }
-    }
-
-    aaptOptions.cruncherEnabled = false
-    aaptOptions.useNewCruncher = false
-
-    // Rename the aar correctly
-    libraryVariants.all { variant ->
-        variant.outputs.each { output ->
-            def outputFile = output.outputFile
-            if (outputFile != null && outputFile.name.endsWith('.aar')) {
-                def fileName = "${project.name}-${variant.baseName}-${version}.aar"
-                output.outputFile = new File(outputFile.parent, fileName)
-            }
-        }
-    }
+task clean(type: Delete) {
+    delete rootProject.buildDir
 }
 
 ext {
@@ -75,84 +37,8 @@ ext {
     jersey_version = "2.22"
     jodatime_version = "2.3"
     junit_version = "4.12"
+    smack_lib_version = "4.1.0"
 }
 
-dependencies {
-    provided 'javax.annotation:jsr250-api:1.0'
-
-    testCompile "junit:junit:$junit_version"
-
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    compile "com.android.support:support-v4:$android_support_lib_version"
-    compile("com.android.support:appcompat-v7:$android_support_lib_version") {
-        exclude module: 'support-v4'
-    }
-    compile 'com.squareup.okhttp3:okhttp:3.2.0'
-    compile "io.swagger:swagger-annotations:$swagger_annotations_version"
-    compile ("org.glassfish.jersey.core:jersey-client:$jersey_version") {
-        exclude group: 'javax.inject', module: 'javax.inject'
-    }
-    compile ("org.glassfish.jersey.media:jersey-media-multipart:$jersey_version") {
-        exclude group: 'javax.inject', module: 'javax.inject'
-    }
-    compile ("org.glassfish.jersey.media:jersey-media-json-jackson:2.22.1") {
-        exclude group: 'javax.inject', module: 'javax.inject'
-    }
-    compile "com.fasterxml.jackson.core:jackson-core:$jackson_version"
-    compile "com.fasterxml.jackson.core:jackson-annotations:$jackson_version"
-    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
-    compile ("com.fasterxml.jackson.datatype:jackson-datatype-joda:2.1.5") {
-        exclude module: 'META-INF/services/com.fasterxml.jackson.databind.Module'
-    }
-    compile "joda-time:joda-time:$jodatime_version"
-    compile "com.brsanthu:migbase64:2.2"
-    compile 'org.igniterealtime.smack:smack-android-extensions:4.1.0'
-    compile 'org.igniterealtime.smack:smack-tcp:4.1.0'
-}
-
-android.packagingOptions {
-    exclude 'META-INF/services/com.fasterxml.jackson.databind.Module'
-//    exclude 'META-INF/NOTICE' // will not include NOTICE file
-//    exclude 'META-INF/LICENSE' // will not include LICENSE file
-}
-
-task sourcesJar(type: Jar) {
-    from android.sourceSets.main.java.srcDirs
-    classifier = 'sources'
-}
-
-task javadoc(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
-}
-
-artifacts {
-    archives javadocJar
-    archives sourcesJar
-}
-
-bintray {
-    user = 'goboomtown'
-    key = 'c831b035629582a562e7a84d0c480a9a07b54b03'
-    configurations = ['archives']
-    pkg {
-        repo = 'maven'
-        name = 'microConnect'
-        desc = 'An Android library that allows Connect partners to integrate issue creation, notification, and chat in a single button.'
-        userOrg = 'goboomtown'
-        licenses = ['Apache-2.0']
-        vcsUrl = 'https://github.com/goboomtown/microConnect-android.git'
-        version {
-            name = '1.1.1'
-            desc = 'An Android library that allows Connect partners to integrate issue creation, notification, and chat in a single button.'
-            released  = new Date()
-            vcsTag = '1.1.1'
-            attributes = ['gradle-plugin': 'com.use.less:com.use.less.gradle:gradle-useless-plugin']
-        }
-    }
-}
+def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library
+def gitUrl = 'https://github.com/goboomtown/microConnect-android.git'   // Git repository URL
