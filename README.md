@@ -1,4 +1,4 @@
-# Boomtown microConnect for Android (v.1.1.0)
+# Boomtown microConnect for Android (v.1.2.0)
 
 #### Minmum Requirements
 - Android 4.4 (API Level 19)
