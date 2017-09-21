@@ -9,8 +9,8 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.goboomtown.boomtownmicroconnectsampleplainview.R;
-import com.goboomtown.btconnecthelp.activity.ChatFragment;
-import com.goboomtown.btconnecthelp.view.BTConnectHelpButton;
+import com.goboomtown.microconnect.btconnecthelp.activity.ChatFragment;
+import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
 
 import java.util.HashMap;
 import java.util.Map;
