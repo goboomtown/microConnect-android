@@ -86,7 +86,7 @@ _Note:_ An example Android application that uses this library may be found in th
        android:paddingTop="@dimen/activity_vertical_margin"
        tools:context="com.goboomtown.boomtowntest.MainActivity">
    
-       <com.goboomtown.btconnecthelp.view.BTConnectHelpButton
+       <com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton
            android:id="@+id/helpButton"
            android:layout_width="300dp"
            android:layout_height="300dp"
