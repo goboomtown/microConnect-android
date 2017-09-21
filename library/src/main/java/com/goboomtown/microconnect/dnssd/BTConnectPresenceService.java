@@ -302,7 +302,11 @@ public class BTConnectPresenceService {
         if (serviceInfo == null) {
             return;
         }
-        serviceInfo.setAttribute(DNS_SD_KEY_TXT, buildTXTDataPayload());
+        try {
+            serviceInfo.setAttribute(DNS_SD_KEY_TXT, buildTXTDataPayload());
+        } catch (Exception|Error e) {
+            Log.w(TAG, Log.getStackTraceString(e));
+        }
     }
 
     /**
