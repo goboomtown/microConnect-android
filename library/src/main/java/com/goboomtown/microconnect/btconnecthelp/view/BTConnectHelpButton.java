@@ -568,12 +568,9 @@ public class BTConnectHelpButton extends View {
                     } else {
                         message = jsonObject.optString("message");
                     }
-                } catch (JSONException e) {
+                } catch (Exception e) {
                     Log.e(TAG, Log.getStackTraceString(e));
                     message = e.getLocalizedMessage();
-                } catch (NullPointerException npe) {
-                    Log.e(TAG, Log.getStackTraceString(npe));
-                    message = npe.getLocalizedMessage();
                 }
 
                 if (success) {
