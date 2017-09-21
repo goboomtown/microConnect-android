@@ -21,14 +21,12 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 
-import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 
 /**
  * Created by Larry Borsato on 2016-07-12.
