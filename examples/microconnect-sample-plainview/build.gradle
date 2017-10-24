@@ -22,23 +22,26 @@ allprojects {
             url "https://maven.google.com"
         }
     }
+
+    ext.global_compileSdkVersion = 26
+    ext.global_buildToolsVersion = '26.0.1'
+    ext.global_supportLibVersion = '26.0.1'
+    ext.global_junitVersion = "4.12"
+    ext.global_runnerVersion = '1.0.0'
+    ext.global_rulesVersion = '1.0.0'
+    ext.global_espressoVersion = '3.0.0'
+    ext.global_swaggerAnnotationsVersion = "1.5.0"
+    ext.global_jacksonVersion = "2.4.2"
+    ext.global_jerseyVersion = "2.22"
+    ext.global_jodatimeVersion = "2.3"
+    ext.global_smackLibVersion = "4.1.0"
 }
 
 apply plugin: 'com.android.application'
 
-ext {
-    android_support_lib_version = "26.0.1"
-    swagger_annotations_version = "1.5.0"
-    jackson_version = "2.4.2"
-    jersey_version = "2.22"
-    jodatime_version = "2.3"
-    junit_version = "4.12"
-    smack_lib_version = "4.1.0"
-}
-
 android {
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion global_compileSdkVersion
+    buildToolsVersion global_buildToolsVersion
 
     defaultConfig {
         applicationId "com.goboomtown.boomtownmicroconnectsampleplainview"
@@ -72,22 +75,22 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile project(':microconnect-aar')
 
-    compile "com.android.support:support-v4:$android_support_lib_version"
-    compile("com.android.support:appcompat-v7:$android_support_lib_version") {
+    compile "com.android.support:support-v4:$global_supportLibVersion"
+    compile("com.android.support:appcompat-v7:$global_supportLibVersion") {
         exclude module: 'support-v4'
     }
 
     compile('com.squareup.okhttp3:okhttp:3.2.0') {
     }
-    compile("org.igniterealtime.smack:smack-android-extensions:$smack_lib_version") {
+    compile("org.igniterealtime.smack:smack-android-extensions:$global_smackLibVersion") {
     }
-    compile("org.igniterealtime.smack:smack-tcp:$smack_lib_version") {
+    compile("org.igniterealtime.smack:smack-tcp:$global_smackLibVersion") {
     }
-    compile("joda-time:joda-time:$jodatime_version") {
+    compile("joda-time:joda-time:$global_jodatimeVersion") {
     }
 
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    androidTestCompile("com.android.support.test.espresso:espresso-core:$global_espressoVersion", {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    testCompile "junit:junit:$junit_version"
+    testCompile "junit:junit:$global_junitVersion"
 }

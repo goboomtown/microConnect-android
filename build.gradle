@@ -24,20 +24,23 @@ allprojects {
             url "https://maven.google.com"
         }
     }
+
+    ext.global_compileSdkVersion = 26
+    ext.global_buildToolsVersion = '26.0.1'
+    ext.global_supportLibVersion = '26.0.1'
+    ext.global_junitVersion = "4.12"
+    ext.global_runnerVersion = '1.0.0'
+    ext.global_rulesVersion = '1.0.0'
+    ext.global_espressoVersion = '3.0.0'
+    ext.global_swaggerAnnotationsVersion = "1.5.0"
+    ext.global_jacksonVersion = "2.4.2"
+    ext.global_jerseyVersion = "2.22"
+    ext.global_jodatimeVersion = "2.3"
+    ext.global_smackLibVersion = "4.1.0"
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
-}
-
-ext {
-    android_support_lib_version = "26.0.1"
-    swagger_annotations_version = "1.5.0"
-    jackson_version = "2.4.2"
-    jersey_version = "2.22"
-    jodatime_version = "2.3"
-    junit_version = "4.12"
-    smack_lib_version = "4.1.0"
 }
 
 def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library
