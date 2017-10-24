@@ -26,10 +26,10 @@
 
 ## API Key Generation
 1. Log onto the Admin Portal (https://admin.goboomtown.com)
-1. Click "Providers" in the left menu
-1. Find your provider in the list
-1. Double-click your provider to show the "Edit Provider" window
-1. Click "API Settings,"" near the button of the configuration panel
+1. Click "Orgs" in the left menu
+1. Find your organization in the list
+1. Double-click your org. to show the "Edit Partner" panel
+1. Click "API Settings" near the button of the panel
 1. Select Sandbox or Live, depending on the state of development
 1. Click "Re-Generate"
 1. Copy the access token and private-key, as provided in the pop-up dialog
@@ -38,18 +38,18 @@
 For chat to work, **microConnect-android** requires you specify the member and user information of the person using your app. This information can be obtained as follows:
 
 1. Log onto the Admin Portal (https://admin.goboomtown.com)
-1. Click "Providers" in the left menu
-1. Find and double-click your provider to show the "Edit Provider" window
-1. Click "Members" along the top of the "Edit Provider" window
-1. Find and double-click the appropriate member from the list to show the "Edit Member" window
-1. The `Id` field of the Member Info section contains the value to use for BTConnectHelpButton `membersId`
-1. Click "Locations" along the top of the "Edit Member" window
-1. Find and double-click the appropriate location for the user of your app to show the "Edit Member Location" window
-1. The `Id` field of the Location Information section contains the value to use for BTConnectHelpButton `membersLocationId`
-1. Click "Discard & Close" in the lower right to return to the "Edit Member" window
-1. Click "Users" along the top of the "Edit Member" window
-1. Find and double-click the user of your app to show the "Edit Member User" window
-1. The `Id` field of the Member User Info section contains the value to use for BTConnectHelpButton `membersUsersId`
+1. Click _Orgs_ in the left menu
+1. Find and double-click your organization to show the _Edit Partner_ window
+1. Click _Customers_ along the top of the _Edit Partner_ window
+1. Find and double-click the appropriate member from the list to show the _Edit Customer_ window
+1. The _Id_ field of the Member Info section contains the value to use for _BTConnectHelpButton#membersId_
+1. Click _Locations_ along the top of the _Edit Customer_ window
+1. Find and double-click the appropriate location for the user of your app to show the _Edit Customer Location_ window
+1. The _Id_ field of the Location Information section contains the value to use for _BTConnectHelpButton#membersLocationId_
+1. Click _Discard & Close_ in the lower right to return to the _Edit Customer_ window
+1. Click _Users_ along the top of the _Edit Customer_ window
+1. Find and double-click the user of your app to show the _Edit Customer User_ window
+1. The _Id_ field of the _Customer User Info_ section contains the value to use for _BTConnectHelpButton#membersUsersId_
 
 ## BTConnectHelp
 
