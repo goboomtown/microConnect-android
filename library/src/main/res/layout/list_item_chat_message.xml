@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
+
     <LinearLayout
         android:id="@+id/content"
         android:layout_width="wrap_content"
@@ -14,18 +15,18 @@
             android:layout_width="wrap_content"
             android:layout_height="30sp"
             android:layout_gravity="right"
-            android:textSize="12sp"
             android:background="@android:color/transparent"
-            android:textColor="@android:color/darker_gray" />
+            android:textColor="@android:color/darker_gray"
+            android:textSize="12sp" />
 
         <TextView
             android:id="@+id/txtInfo"
-            android:visibility="gone"
             android:layout_width="wrap_content"
             android:layout_height="30sp"
             android:layout_gravity="right"
+            android:textColor="@android:color/darker_gray"
             android:textSize="12sp"
-            android:textColor="@android:color/darker_gray" />
+            android:visibility="gone" />
 
         <LinearLayout
             android:id="@+id/contentPanel"
@@ -42,21 +43,11 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="right"
-                android:paddingLeft="10dp"
+                android:orientation="vertical"
                 android:paddingBottom="10dp"
-                android:orientation="vertical">
+                android:paddingLeft="10dp">
 
-            <!--<LinearLayout-->
-                <!--android:id="@+id/contentWithBackground"-->
-                <!--android:layout_width="wrap_content"-->
-                <!--android:layout_height="wrap_content"-->
-                <!--android:layout_gravity="right"-->
-                <!--android:background="@drawable/in_message_bg"-->
-                <!--android:paddingLeft="10dp"-->
-                <!--android:paddingBottom="10dp"-->
-                <!--android:orientation="vertical">-->
-
-                <com.goboomtown.btconnecthelp.widget.WebImageView
+                <com.goboomtown.microconnect.btconnecthelp.widget.WebImageView
                     android:id="@+id/attachment"
                     android:layout_width="100dp"
                     android:layout_height="100dp" />
@@ -67,16 +58,16 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="right"
                     android:background="@drawable/in_message_bg"
-                    android:paddingLeft="10dp"
+                    android:orientation="vertical"
                     android:paddingBottom="10dp"
-                    android:orientation="vertical">
+                    android:paddingLeft="10dp">
 
                     <TextView
                         android:id="@+id/txtMessage"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:textColor="@android:color/black"
-                        android:maxWidth="240dp" />
+                        android:maxWidth="240dp"
+                        android:textColor="@android:color/black" />
 
                 </LinearLayout>
 
@@ -87,7 +78,8 @@
                 android:layout_width="50dp"
                 android:layout_height="50dp" />
 
-
         </LinearLayout>
+
     </LinearLayout>
+
 </RelativeLayout>
