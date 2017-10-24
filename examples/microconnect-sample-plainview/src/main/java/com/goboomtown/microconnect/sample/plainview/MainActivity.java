@@ -19,8 +19,8 @@ public class MainActivity extends AppCompatActivity
 
     public static final String TAG = "MainActivity";
 
-    public static final String CRED_TOKEN = "31211E2CC0A30F98ABBD";
-    public static final String CRED_SECRET = "0a46f159dc5a846d3fa7cf7024adb2248a8bc8ed";
+    public static final String CRED_TOKEN = "042F0714883D378313F8";
+    public static final String CRED_SECRET = "22d245384b8279f1c9cc3ccfa51d8d0a5a7b0161";
 
     private FrameLayout         mFragmentContainer;
 
