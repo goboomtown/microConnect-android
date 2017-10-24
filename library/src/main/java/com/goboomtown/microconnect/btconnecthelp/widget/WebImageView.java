@@ -2,8 +2,6 @@ package com.goboomtown.microconnect.btconnecthelp.widget;
 
 import java.util.HashMap;
 
-//import org.apache.http.util.ByteArrayBuffer;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -12,18 +10,8 @@ import android.os.AsyncTask;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.util.AttributeSet;
-import android.widget.ImageView;
 
-//import org.apache.http.HttpEntity;
-//import org.apache.http.HttpResponse;
-//import org.apache.http.client.ClientProtocolException;
-//import org.apache.http.client.HttpClient;
-//import org.apache.http.client.methods.HttpGet;
-//import org.apache.http.entity.BufferedHttpEntity;
-//import org.apache.http.impl.client.DefaultHttpClient;
-//import org.apache.http.util.ByteArrayBuffer;
-
-public class WebImageView extends ImageView {
+public class WebImageView extends android.support.v7.widget.AppCompatImageView {
 	
 	private Drawable 				mPlaceholder, mImage;
 	private RoundedBitmapDrawable 	mRoundImage;
