@@ -59,6 +59,10 @@ artifacts {
     archives sourcesJar
 }
 
+configurations {
+    all*.exclude group: 'xpp3', module: 'xpp3'
+}
+
 dependencies {
     compile "com.android.support:support-v4:$global_supportLibVersion"
     compile("com.android.support:appcompat-v7:$global_supportLibVersion") {
