@@ -59,16 +59,6 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    // Rename the aar correctly
-    android.applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            def outputFile = output.outputFile
-            if (outputFile != null && outputFile.name.endsWith('.aar')) {
-                def fileName = "${project.name}-${variant.baseName}-${versionMajor}.${versionMinor}.${versionPatch}.aar"
-                output.outputFile = new File(outputFile.parent, fileName)
-            }
-        }
-    }
 }
 
 configurations {
