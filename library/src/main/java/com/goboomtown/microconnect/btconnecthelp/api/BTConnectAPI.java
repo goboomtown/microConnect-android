@@ -9,6 +9,7 @@ import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -21,12 +22,14 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.Mac;
 
+import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Headers;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 /**
  * Created by Larry Borsato on 2016-07-12.
@@ -100,25 +103,47 @@ public class BTConnectAPI {
             .readTimeout(60, TimeUnit.SECONDS)
             .build();
 
-    public static void post(Context context, String uri, JSONObject jsonParams, Callback callback) {
+    public static void post(Context context, String uri, JSONObject jsonParams, final Callback callback) {
         String requestUrl = String.format("%s%s", BTConnectAPIBaseURL, uri);
         Request request = new Request.Builder()
                 .url(requestUrl)
                 .headers(Headers.of(addHeaders(uri)))
                 .post(RequestBody.create(MediaType.parse("application/json; charset=utf-8"), jsonParams.toString()))
                 .build();
+        Callback wrapCb = new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onFailure(call, e);
+            }
 
-        client.newCall(request).enqueue(callback);
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                Log.w(TAG, "successful response (X-Request-ID: " + response.header("X-Request-ID", "") + ") from " + call.request().url().toString().substring(0, 512));
+                callback.onResponse(call, response);
+            }
+        };
+        client.newCall(request).enqueue(wrapCb);
     }
 
-    public static void get(Context context, String uri, Callback callback) {
+    public static void get(Context context, String uri, final Callback callback) {
         String requestUrl = String.format("%s%s", BTConnectAPIBaseURL, uri);
         Request request = new Request.Builder()
                 .url(requestUrl)
                 .headers(Headers.of(addHeaders(uri)))
                 .build();
+        Callback wrapCb = new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                callback.onFailure(call, e);
+            }
 
-        client.newCall(request).enqueue(callback);
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                Log.w(TAG, "successful response (X-Request-ID: " + response.header("X-Request-ID", "") + ") from " + call.request().url().toString().substring(0, 512));
+                callback.onResponse(call, response);
+            }
+        };
+        client.newCall(request).enqueue(wrapCb);
     }
 
     private static HashMap<String, String> addHeaders(String uri) {
