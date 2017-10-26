@@ -27,8 +27,9 @@ android {
             def outputFile = output.outputFile
             if (outputFile != null && outputFile.name.endsWith('.aar')) {
                 def fileName = "microconnect-${variant.baseName}-${versionMajor}.${versionMinor}.${versionPatch}.aar"
-                output.outputFile = new File(outputFile.parent, fileName)
+                outputFile = new File(outputFile.parent, fileName)
             }
+            return outputFile
         }
     }
 }

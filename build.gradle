@@ -9,7 +9,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -26,8 +26,8 @@ allprojects {
     }
 
     ext.global_compileSdkVersion = 26
-    ext.global_buildToolsVersion = '26.0.1'
-    ext.global_supportLibVersion = '26.0.1'
+    ext.global_buildToolsVersion = '26.0.2'
+    ext.global_supportLibVersion = '26.0.2'
     ext.global_junitVersion = "4.12"
     ext.global_runnerVersion = '1.0.0'
     ext.global_rulesVersion = '1.0.0'
@@ -37,10 +37,6 @@ allprojects {
     ext.global_jerseyVersion = "2.22"
     ext.global_jodatimeVersion = "2.3"
     ext.global_smackLibVersion = "4.1.0"
-}
-
-task clean(type: Delete) {
-    delete rootProject.buildDir
 }
 
 def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library
