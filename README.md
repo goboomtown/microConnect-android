@@ -21,7 +21,7 @@
 1. Download the AAR file from [github](https://github.com/goboomtown/microConnect-android/raw/master/dist/aar/microconnect-release-1.2.1.aar).
 1. From within Android Studio, open File -> New -> New Module
 1. Choose Import .JAR/.AAR Package, click Next
-1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-1.1.0.aar
+1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-1.2.1.aar
 1. The "Subproject name" should be auto-filled to "microConnect-android-release-1.2.1" once you choose this AAR file path.
 1. Click Finish
 
