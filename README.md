@@ -16,12 +16,13 @@
 1. Choose the "Source Directory" by browsing to the file path/location of this clone'd repo.
 1. The module name "microConnect-android" should be auto-filled once you choose this library's file path.
 1. Click Finish.
-- or -
-1. Download the AAR file from [https://github.com/goboomtown/microConnect-android/blob/master/dist/microConnect-android-1.1.0/microConnect-android-release-1.1.0.aar]
+
+ or -
+1. Download the AAR file from [github](https://github.com/goboomtown/microConnect-android/raw/master/dist/aar/microconnect-release-1.2.0.aar).
 1. From within Android Studio, open File -> New -> New Module
 1. Choose Import .JAR/.AAR Package, click Next
-1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-1.1.0.aar
-1. The "Subproject name" should be auto-filled to "microConnect-android-release-1.0.0" once you choose this AAR file path.
+1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-1.2.0.aar
+1. The "Subproject name" should be auto-filled to "microConnect-android-release-1.2.0" once you choose this AAR file path.
 1. Click Finish
 
 ## API Key Generation
