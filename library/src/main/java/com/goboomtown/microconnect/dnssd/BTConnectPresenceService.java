@@ -92,7 +92,7 @@ public class BTConnectPresenceService {
     protected Map<String, String> customPayloadData;
 
     /**
-     * List of keys contained in {@link this#customPayloadData} that should be
+     * List of keys contained in {@link BTConnectPresenceService#customPayloadData} that should be
      * encrypted when broadcast.
      */
     protected List<String> customPayloadDataEncryptedVals;
@@ -105,7 +105,7 @@ public class BTConnectPresenceService {
     /**
      * default c'tor
      *
-     * @param context
+     * @param context runtime {@link Context}
      */
     private BTConnectPresenceService(Context context) {
         ctx = context;
@@ -117,9 +117,9 @@ public class BTConnectPresenceService {
     }
 
     /**
-     * Calls {@link this#BTConnectPresenceService(Context)} and adds given listener.
+     * Calls {@link BTConnectPresenceService#BTConnectPresenceService(Context)} and adds given listener.
      *
-     * @param context
+     * @param context runtime {@link Context}
      * @param listener the {@link ServiceAdvertisementListener} to add.
      */
     private BTConnectPresenceService(Context context, ServiceAdvertisementListener listener) {
@@ -128,10 +128,8 @@ public class BTConnectPresenceService {
     }
 
     /**
-     * Gets singleton instance of this class.
-     *
-     * @param context
-     * @return
+     * @param context runtime {@link Context}
+     * @return singleton instance of this class
      * @throws IllegalStateException with null context
      */
     public static BTConnectPresenceService getInstance(Context context) throws IllegalStateException {
@@ -145,11 +143,9 @@ public class BTConnectPresenceService {
     }
 
     /**
-     * Gets singleton instance of this class with provided listener.
-     *
-     * @param context
+     * @param context runtime {@link Context}
      * @param listener the {@link ServiceAdvertisementListener} to use.
-     * @return
+     * @return singleton instance of this class
      * @throws IllegalStateException with null context
      */
     public static BTConnectPresenceService getInstance(Context context, ServiceAdvertisementListener listener) throws IllegalStateException {
@@ -242,7 +238,7 @@ public class BTConnectPresenceService {
     /**
      * Register NSD service.  Exits with no action if svc registration already underway.
      *
-     * @param port
+     * @param port port to register with DNS-SD service
      */
     protected void registerDNSSDService(int port) {
         if (isSvcRegistering()) {
@@ -293,9 +289,9 @@ public class BTConnectPresenceService {
 
     /**
      * Append TXT attribute (name/val pair) to serviceInfo instance.
-     * The value used for TXT is provided by {@link this#buildTXTDataPayload()}.
+     * The value used for TXT is provided by {@link BTConnectPresenceService#buildTXTDataPayload()}.
      *
-     * @param serviceInfo
+     * @param serviceInfo service info to append with TXT attr.
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     protected void appendDNSSDServiceLollipop(NsdServiceInfo serviceInfo) {
@@ -469,10 +465,10 @@ public class BTConnectPresenceService {
     }
 
     /**
-     * Convenience methods for {@link this#addCustomPayloadData(String, String, boolean)} with encrypted = true.
+     * Convenience methods for {@link BTConnectPresenceService#addCustomPayloadData(String, String, boolean)} with encrypted = true.
      *
-     * @param key
-     * @param value
+     * @param key custom payload data key
+     * @param value custom payload data value
      */
     public void addCustomPayloadData(String key, String value) throws IllegalArgumentException {
         addCustomPayloadData(key, value, true);
@@ -498,7 +494,7 @@ public class BTConnectPresenceService {
     /**
      * Remove a key/val pair from custom payload data.
      *
-     * @param key
+     * @param key key to remove
      */
     public void removeCustomPayloadData(String key) {
         if (key == null) {
@@ -516,10 +512,10 @@ public class BTConnectPresenceService {
     }
 
     /**
-     * Set name/value pair to have encrypted value during broadcast.
+     * Set name/value pair value to encrypt during broadcast.
      *
      * @param key key to encrypt when broadcasting data
-     * @param encrypt
+     * @param encrypt if true, then encrypt the key; if false then decrypt it
      */
     public void setCustomPayloadDataEncrypted(String key, boolean encrypt) throws IllegalArgumentException {
         if (!customPayloadData.containsKey(key)) {
@@ -583,7 +579,7 @@ public class BTConnectPresenceService {
     /**
      * Get name of OS running on device.
      *
-     * @param context
+     * @param context runtime {@link Context}
      * @return device OS name
      */
     public static String deviceOS(Context context) {
