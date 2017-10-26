@@ -4,30 +4,21 @@ import android.app.Activity;
 import android.util.Base64;
 import android.util.Log;
 
-//import com.goboomtown.activity.ChatHistoryActivity;
-
-import org.jivesoftware.smack.AbstractConnectionClosedListener;
 import org.jivesoftware.smack.AbstractConnectionListener;
-import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.SASLAuthentication;
 import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
-import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.packet.Presence;
-import org.jivesoftware.smack.roster.Roster;
 import org.jivesoftware.smack.sasl.SASLMechanism;
 import org.jivesoftware.smack.sasl.provided.SASLDigestMD5Mechanism;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
-import org.jivesoftware.smackx.muc.MUCNotJoinedException;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.json.JSONObject;
@@ -41,14 +32,10 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-import static org.jivesoftware.smack.AbstractXMPPConnection.*;
-
 /**
- * Created by larry on 2015-12-11.
+ * @author lborsato created on 2015-12-11
+ * @author fbeachler
  */
-
-
-
 public class BoomtownChat {
     private static BoomtownChat shared_instance = null;
 
