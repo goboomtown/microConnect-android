@@ -9,7 +9,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -31,7 +31,10 @@ task clean(type: Delete) {
 }
 
 ext {
-    android_support_lib_version = "26.0.1"
+    global_compileSdkVersion = 26
+    global_minSdkVersion = 19
+    android_build_tools_version = "26.0.2"
+    android_support_lib_version = "26.1.0"
     swagger_annotations_version = "1.5.0"
     jackson_version = "2.4.2"
     jersey_version = "2.22"
