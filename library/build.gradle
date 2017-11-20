@@ -6,11 +6,11 @@ android {
     def versionMinor = 2
     def versionPatch = 0
 
-    compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    compileSdkVersion global_compileSdkVersion
+    buildToolsVersion android_build_tools_version
     defaultConfig {
-        minSdkVersion 19
-        targetSdkVersion 26
+        minSdkVersion global_minSdkVersion
+        targetSdkVersion global_compileSdkVersion
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         versionCode versionMajor * 10000 + versionMinor * 100 + versionPatch
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -27,7 +27,7 @@ android {
             def outputFile = output.outputFile
             if (outputFile != null && outputFile.name.endsWith('.aar')) {
                 def fileName = "microconnect-${variant.baseName}-${versionMajor}.${versionMinor}.${versionPatch}.aar"
-                output.outputFile = new File(outputFile.parent, fileName)
+                // output.outputFile = new File(outputFile.parent, fileName)
             }
         }
     }
@@ -74,4 +74,3 @@ dependencies {
     })
     testCompile "junit:junit:$junit_version"
 }
-
