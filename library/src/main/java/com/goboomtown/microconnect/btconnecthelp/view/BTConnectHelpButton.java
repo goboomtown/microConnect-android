@@ -566,6 +566,9 @@ public class BTConnectHelpButton extends View {
                             }
                         }
                     } else {
+                        if (jsonObject == null) {
+                            throw new IllegalStateException("server response contained unexpected content");
+                        }
                         message = jsonObject.optString("message");
                     }
                 } catch (Exception e) {
