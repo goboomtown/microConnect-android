@@ -7,7 +7,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
+        classpath 'com.android.tools.build:gradle:3.0.1'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -24,11 +24,9 @@ allprojects {
     }
 }
 
-apply plugin: 'com.android.application'
-
 ext {
-    compileSdkVersion = 26
-    minSdkVersion = 19
+    global_compileSdkVersion = 26
+    global_minSdkVersion = 19
     android_build_tools_version = "26.0.2"
     android_support_lib_version = "26.1.0"
     swagger_annotations_version = "1.5.0"
@@ -38,6 +36,8 @@ ext {
     junit_version = "4.12"
     smack_lib_version = "4.1.0"
 }
+
+apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion global_compileSdkVersion
@@ -69,6 +69,10 @@ android {
             }
         }
     }
+}
+
+configurations {
+    all*.exclude group: 'xpp3', module: 'xpp3'
 }
 
 dependencies {
