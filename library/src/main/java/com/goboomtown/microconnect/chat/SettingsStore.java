@@ -85,7 +85,7 @@ public class SettingsStore {
 	{
 		BoomtownChatMessage message;
 		ArrayList<BoomtownChatMessage> history = new ArrayList<BoomtownChatMessage>();
-		String historyString = prefs.getString(SETTINGS_CHATHISTORY+roomJid, "{}");
+		String historyString = prefs.getString(SETTINGS_CHATHISTORY+roomJid, "[]");
 		try {
 			JSONArray jsonArray = new JSONArray(historyString);
 			ArrayList<String> historyEntries = (ArrayList<String>) JSONHelper.toList(jsonArray);

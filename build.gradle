@@ -33,7 +33,7 @@ task clean(type: Delete) {
 ext {
     global_compileSdkVersion = 27
     global_minSdkVersion = 19
-    android_build_tools_version = "27.0.2"
+    android_build_tools_version = "28.0.3"
     android_support_lib_version = "27.0.2"
     swagger_annotations_version = "1.5.0"
     jackson_version = "2.4.2"

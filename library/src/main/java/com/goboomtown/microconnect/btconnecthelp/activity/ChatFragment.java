@@ -221,7 +221,7 @@ public class ChatFragment extends Fragment {
                 mParent.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s", mIssue.id);
+                        String url = String.format("goboomtownconnect://prod/member/issue/read?issue_id=%s&call", mIssue.id);
                         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
                         mParent.startActivity(intent);
                     }

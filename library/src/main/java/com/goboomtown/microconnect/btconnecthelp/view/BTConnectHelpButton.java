@@ -544,7 +544,7 @@ public class BTConnectHelpButton extends View {
                         JSONArray resultsArray = jsonObject.optJSONArray("results");
                         if (resultsArray instanceof JSONArray) {
                             JSONObject provider = resultsArray.optJSONObject(0);
-                            if (provider instanceof JSONObject) {
+                            if (provider !=null && provider instanceof JSONObject) {
                                 success = true;
                                 providerId = provider.optString("id");
                                 if (provider.has("website")) {

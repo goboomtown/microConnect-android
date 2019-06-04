@@ -256,8 +256,11 @@ public class BTConnectPresenceService {
         svcRegistering = true;
         svcRegistered = false;
         NsdServiceInfo serviceInfo = buildDNSSDServiceInfo(port);
+
+
         Log.v(TAG, "registering NSD with service info: " + serviceInfo);
         try {
+            mNsdManager = (NsdManager) ctx.getSystemService(Context.NSD_SERVICE);
             mNsdManager.registerService(
                     serviceInfo, NsdManager.PROTOCOL_DNS_SD, mRegistrationListener);
         } catch (Exception e) {
