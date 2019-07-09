@@ -1,5 +1,8 @@
 include ':library'
 
+include ":boomtown-boomtownchat-android"
+project(":boomtown-boomtownchat-android").projectDir = new File(settingsDir, "modules/boomtown-boomtownchat-android")
+
 include ':microconnect-sample-plainview'
 project(":microconnect-sample-plainview").projectDir = new File(settingsDir, "examples/microconnect-sample-plainview")
 

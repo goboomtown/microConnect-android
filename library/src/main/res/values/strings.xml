@@ -14,4 +14,6 @@
     <string name="reason_member_info_missing">Member information is missing or incomplete.</string>
     <string name="error_unable_to_get_provider_info">Unable to retrieve provider information</string>
 
+    <string name="cdesc_emoticonimg">emoticon image</string>
+
 </resources>

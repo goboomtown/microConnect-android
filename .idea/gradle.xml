@@ -11,6 +11,7 @@
             <option value="$PROJECT_DIR$/examples/microconnect-sample-plainview" />
             <option value="$PROJECT_DIR$/examples/microconnect-sample-plainview/microconnect-aar" />
             <option value="$PROJECT_DIR$/library" />
+            <option value="$PROJECT_DIR$/modules/boomtown-boomtownchat-android" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

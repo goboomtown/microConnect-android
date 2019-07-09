@@ -15,11 +15,15 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.Editable;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextWatcher;
+import android.text.style.DynamicDrawableSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -40,12 +44,16 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.goboomtown.activity.BaseActivity;
+import com.goboomtown.activity.KBActivity;
+import com.goboomtown.chat.BoomtownChat;
+import com.goboomtown.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectIssue;
 import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
-import com.goboomtown.microconnect.chat.BoomtownChat;
-import com.goboomtown.microconnect.chat.BoomtownChatMessage;
+//import com.goboomtown.microconnect.chat.BoomtownChat;
+//import com.goboomtown.microconnect.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.R;
 
 import org.json.JSONArray;
@@ -57,8 +65,12 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import okhttp3.Call;
@@ -75,7 +87,7 @@ import okhttp3.Response;
  * <p>
  * Created by Larry Borsato on 2016-07-12.
  */
-public class ChatFragment extends Fragment {
+public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterClickListener {
 
     public static final String TAG = ChatFragment.class.getSimpleName();
 
@@ -129,6 +141,7 @@ public class ChatFragment extends Fragment {
     private EditText messageET;
     private ListView messagesContainer;
     private Button sendBtn;
+//    private OldChatAdapter adapter;
     private ChatAdapter adapter;
     private ArrayList<BoomtownChatMessage> chatHistory;
     private ImageButton chatUploadButton;
@@ -158,6 +171,11 @@ public class ChatFragment extends Fragment {
 
     public String senderId;
     public String senderDisplayName;
+    private AutocompletePredictor acPredictor;
+    private Map<String, BoomtownChatMessage.Emoticon> emoticonsMap;
+    private ChatMessageEditWatcher cmew;
+
+    protected Map<String, BoomtownChatMessage.Emoticon> chatEmoticons;
 
     public ChatFragment() {
         // Required empty public constructor
@@ -191,6 +209,8 @@ public class ChatFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        BoomtownChat.sharedInstance().avatarRetrievalAPIBaseURL = "https://gnfktoh224eg-api.goboomtown.com";
 
         mAutocompleteEntries = new ArrayList<>();
         mMentions = new ArrayList<>();
@@ -239,6 +259,14 @@ public class ChatFragment extends Fragment {
         }
 
         initControls(view);
+//        initLayoutListeners();
+
+        emoticonsMap = getChatEmoticons();
+        acPredictor = new AutocompletePredictor(new WeakReference<Activity>(mParent),
+                new WeakReference<ListView>(mAutocompleteListView),
+                new WeakReference<ListView>(messagesContainer),
+                new WeakReference<EditText>(messageEdit),
+                new WeakReference<Map<String, BoomtownChatMessage.Emoticon>>(emoticonsMap));
 
         return view;
     }
@@ -268,6 +296,53 @@ public class ChatFragment extends Fragment {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onClickChatAttachment(View v, String imageUrl) {
+        final String iu = imageUrl;
+        getActivity().runOnUiThread(() -> showWebView(iu));
+    }
+
+    @Override
+    public void onClickKB(View v, String kbUrl, String kbTitle) {
+        final String url = kbUrl;
+//        getActivity().runOnUiThread(() -> showWebView(url));
+        Intent intent = new Intent(mParent, KBActivity.class);
+        intent.putExtra(KBActivity.ARG_URL, url);
+        intent.putExtra(KBActivity.ARG_TITLE, kbTitle);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onClickChatBtnInfo(View v, String mention) {
+        addMention(mention);
+    }
+
+    @Override
+    public void onClickChatAvatarLeft(View v, String mention) {
+        addMention(mention);
+    }
+
+    @Override
+    public void onClickChatAvatarRight(View v, String mention) {
+        addMention(mention);
+    }
+
+    @Override
+    public void onClickChatActionButton(View v, String actionUrl) {
+        JSONObject actMsg = new JSONObject();
+        try {
+            actMsg.put(BoomtownChatMessage.JSON_KEY_SECRET, BoomtownChatMessage.PAYLOAD_SECRETS.get(BoomtownChatMessage.PayloadType.DATA));
+            actMsg.put(BoomtownChatMessage.JSON_KEY_MESSAGE, actionUrl);
+            actMsg.put(BoomtownChatMessage.JSON_KEY_CHANNEL, "chat");
+            actMsg.put(BoomtownChatMessage.JSON_KEY_CONTEXT, new JSONObject());
+            actMsg.put(BoomtownChatMessage.JSON_KEY_FROM, senderId);
+            String msgString = actMsg.toString();
+            BoomtownChat.sharedInstance().sendGroupchatMessage(msgString, true);
+        } catch (JSONException e) {
+            Log.w(TAG, "unable to send action msg, exception was:\n" + Log.getStackTraceString(e));
+        }
     }
 
     // TODO: Rename method, update argument and hook method into UI event
@@ -415,9 +490,14 @@ public class ChatFragment extends Fragment {
             }
 
             @Override
-            public void onTimeoutConnect() {
-                Log.d("ChatFragment", "onTimeoutConnect");
+            public void onConnectError() {
+
             }
+
+//            @Override
+//            public void onTimeoutConnect() {
+//                Log.d("ChatFragment", "onTimeoutConnect");
+//            }
 
             @Override
             public void onNotAuthenticate() {
@@ -425,10 +505,15 @@ public class ChatFragment extends Fragment {
             }
 
             @Override
-            public void onDisconnect() {
+            public void onDisconnect(Exception e) {
                 Log.d("ChatFragment", "onDisconnect");
-
             }
+
+//            @Override
+//            public void onDisconnect() {
+//                Log.d("ChatFragment", "onDisconnect");
+//
+//            }
 
             @Override
             public void onReceiveMessage(final BoomtownChatMessage message) {
@@ -471,9 +556,10 @@ public class ChatFragment extends Fragment {
         });
 
         chatHistory = new ArrayList<BoomtownChatMessage>();
-        adapter = new ChatAdapter(mParent, new ArrayList<BoomtownChatMessage>());
+//        adapter = new OldChatAdapter(mParent, new ArrayList<BoomtownChatMessage>());
 //        adapter.chatFrament = this;
-        adapter.chatFragment = this;
+        adapter = new ChatAdapter(mParent, this, chatHistory, emoticonsMap);
+//        adapter.chatFragment = this;
         messagesContainer.setAdapter(adapter);
 
         commEnter();
@@ -584,6 +670,42 @@ public class ChatFragment extends Fragment {
 
     }
 
+    protected void initLayoutListeners() {
+        final InputMethodManager imm = (InputMethodManager) mParent.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (cmew == null) {
+            cmew = new ChatMessageEditWatcher(new WeakReference<>(imm));
+            messageEdit.addTextChangedListener(cmew);
+        }
+        chatUploadButton.setOnClickListener(v -> {
+            // Perform action on click
+            dismissKeyboard(imm);
+            if (mInRoom) {
+                ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+                if (messageEdit != null) {
+                    messageEdit.setText("");
+                    scroll();
+                }
+            } else {
+                ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+            }
+        });
+
+        chatSendButton.setOnClickListener(v -> {
+            // Perform action on click
+            dismissKeyboard(imm);
+            if (mInRoom) {
+                if (messageEdit != null) {
+                    BoomtownChat.sharedInstance().sendGroupchatMessage(messageEdit.getText().toString(), false);
+                    messageEdit.setText("");
+                    scroll();
+                } else {
+                    ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+                }
+            }
+        });
+    }
+
+
 
     private void connect() {
         if (BoomtownChat.sharedInstance().isConnected())
@@ -657,6 +779,28 @@ public class ChatFragment extends Fragment {
             return;
         inputManager.hideSoftInputFromWindow(mParent.getCurrentFocus().getWindowToken(),
                 InputMethodManager.HIDE_NOT_ALWAYS);
+    }
+
+    public void dismissKeyboard(InputMethodManager imm) {
+        if (mParent == null || mParent.getCurrentFocus() == null) {
+            return;
+        }
+        if (imm.isAcceptingText()) { // verify if the soft keyboard is open
+            if (mParent.getCurrentFocus() != null) {
+                imm.hideSoftInputFromWindow(mParent.getCurrentFocus().getWindowToken(), 0);
+            }
+        }
+    }
+
+    public void showKeyboard(InputMethodManager inputManager, EditText textFieldForKeyboardIn) {
+        if (inputManager == null) {
+            return;
+        }
+        if (mParent == null || mParent.getCurrentFocus() == null || textFieldForKeyboardIn == null) {
+            return;
+        }
+        textFieldForKeyboardIn.requestFocus();
+        inputManager.showSoftInput(textFieldForKeyboardIn, 0);
     }
 
     public void showAutocompleteList(String text) {
@@ -1219,5 +1363,452 @@ public class ChatFragment extends Fragment {
         return dest;
     }
 
+    public static class AutocompletePredictor {
+
+        public static final String BLANK = "";
+        public static final String OPEN_PARENS = "(";
+        public static final String CLOSED_PARENS = ")";
+        public static final String AT_MENTION = "@";
+        public static final String SPACE = " ";
+        public static final String MAP_KEY_TXT = "txt";
+        public static final String MAP_KEY_IMG = "img";
+
+        private List<String> mentions;
+        private List<String> acListEntriesMention;
+        private WeakReference<Activity> act;
+        private WeakReference<ListView> acListView;
+        private WeakReference<ListView> msgContainerListView;
+        private WeakReference<EditText> msgEditText;
+        private WeakReference<Map<String, BoomtownChatMessage.Emoticon>> emoticonsMap;
+        private int lastOpenParensIndex;
+        private int lastSpaceIndex;
+        private int lastATMentionIndex;
+        private String mentionToken;
+        private String emoticonToken;
+
+        /**
+         * @param autoCompleteListView
+         * @param messagesContainer
+         */
+        public AutocompletePredictor(WeakReference<Activity> parent,
+                                     WeakReference<ListView> autoCompleteListView,
+                                     WeakReference<ListView> messagesContainer,
+                                     WeakReference<EditText> messageEdit,
+                                     WeakReference<Map<String, BoomtownChatMessage.Emoticon>> emoticonsMap) {
+            if (parent == null) {
+                throw new IllegalArgumentException("parent cannot be null");
+            }
+            if (autoCompleteListView == null) {
+                throw new IllegalArgumentException("listview cannot be null");
+            }
+            if (messagesContainer == null) {
+                throw new IllegalArgumentException("container listview cannot be null");
+            }
+            if (messageEdit == null) {
+                throw new IllegalArgumentException("edittext cannot be null");
+            }
+            this.acListView = autoCompleteListView;
+            this.msgContainerListView = messagesContainer;
+            this.msgEditText = messageEdit;
+            this.act = parent;
+            this.emoticonsMap = emoticonsMap;
+            if (this.emoticonsMap == null || this.emoticonsMap.get() == null) {
+                Map<String, BoomtownChatMessage.Emoticon> noop = new HashMap<>();
+                this.emoticonsMap = new WeakReference<Map<String, BoomtownChatMessage.Emoticon>>(noop);
+            }
+            mentions = new ArrayList<>();
+            initPos();
+        }
+
+        /**
+         * reset {@link this#lastOpenParensIndex} and {@link this#lastSpaceIndex}
+         * that track parsing positions; also set {@link this#mentionToken}
+         * and {@link this#emoticonToken} to {@link this#BLANK}.
+         */
+        protected void initPos() {
+            this.lastOpenParensIndex = -1;
+            this.lastSpaceIndex = -1;
+            this.lastATMentionIndex = -1;
+            this.mentionToken = BLANK;
+            this.emoticonToken = BLANK;
+        }
+
+        /**
+         * @return the mentions list.
+         */
+        public List<String> getMentions() {
+            return mentions;
+        }
+
+        /**
+         * @param mention mention to add
+         */
+        public void addMention(String mention) {
+            if (mention == null) {
+                return;
+            }
+            mentions.add(mention);
+        }
+
+        /**
+         * Show auto complete list.  The list to be shown is based on the latest character typed in text.
+         * Supports display of emoticons and mention lists, shown distinctly and not simultaneously.
+         * Multiple emoticons and/or mentions in one text are supported.  Any existing
+         * replacements/spans will remain intact.
+         *
+         * @param fullText entire text field used to create an autocomplete list
+         */
+        public void showAutoCompleteList(final Editable fullText) {
+            if (fullText == null) {
+                return;
+            }
+            final SpannableStringBuilder text = new SpannableStringBuilder(fullText);
+            if (fullText.toString().endsWith(OPEN_PARENS)) {
+                lastOpenParensIndex = text.length() - 1;
+            } else if (fullText.toString().endsWith(CLOSED_PARENS)) {
+                lastOpenParensIndex = -1;
+            } else if (fullText.toString().endsWith(AT_MENTION)) {
+                lastATMentionIndex = text.length() - 1;
+            } else if (fullText.toString().endsWith(SPACE)) {
+                lastSpaceIndex = text.length() - 1;
+                lastATMentionIndex = -1;
+                lastOpenParensIndex = -1;
+            }
+            if (lastOpenParensIndex != -1 && !fullText.toString().endsWith(OPEN_PARENS)) {
+                if (lastOpenParensIndex >= text.length()) {
+                    lastOpenParensIndex = text.length() - 1;
+                }
+                emoticonToken = text.toString().substring(lastOpenParensIndex, text.length());
+                buildEmoticonsListViewAdapter(text, acListView, msgContainerListView, emoticonToken, emoticonsMap, act.get().getApplicationContext());
+            } else if (lastATMentionIndex != -1 && !fullText.toString().endsWith(AT_MENTION)) {
+                int tokenStart = lastATMentionIndex + 1;
+                mentionToken = text.toString().substring(tokenStart, text.length());
+                buildMentionsListViewAdapter(text, acListView, msgContainerListView, mentionToken, act.get().getApplicationContext());
+            }
+        }
+
+        /**
+         * Build the emoticons autocomplete list view adapter.
+         *
+         * @param text
+         * @param acListView
+         * @param msgContainerListView
+         * @param emoticonToken
+         * @param emoticonsMap
+         * @param ctx
+         */
+        public void buildEmoticonsListViewAdapter(final SpannableStringBuilder text,
+                                                  final WeakReference<ListView> acListView,
+                                                  final WeakReference<ListView> msgContainerListView,
+                                                  final String emoticonToken,
+                                                  final WeakReference<Map<String, BoomtownChatMessage.Emoticon>> emoticonsMap,
+                                                  final Context ctx) {
+            if (emoticonToken == null || emoticonToken.length() < 1) {
+                acListView.get().setAdapter(null);
+                acListView.get().setVisibility(View.INVISIBLE);
+                msgContainerListView.get().setEnabled(true);
+                return;
+            }
+            final List<BoomtownChatMessage.Emoticon> acListEntriesEmoticon = buildAutocompleteEmoticonsList(emoticonToken
+                            .replace(OPEN_PARENS, BLANK).replace(CLOSED_PARENS, BLANK),
+                    emoticonsMap.get());
+
+            setACListLayoutAttibutes(ctx, acListView.get(), acListEntriesEmoticon);
+            msgContainerListView.get().setEnabled(false);
+
+            final EmoticonListAdapter acAdapter = new EmoticonListAdapter(act.get().getApplicationContext(),
+                    R.layout.emoticon_list_row, acListEntriesEmoticon);
+            // Assign adapter to ListView
+            acListView.get().setAdapter(acAdapter);
+            acListView.get().setClickable(true);
+            // ListView Item Click Listener
+            acListView.get().setOnItemClickListener((parent, view, position, id) -> {
+                // ListView Clicked item index
+                int itemPosition = position;
+                // ListView Clicked item value
+                BoomtownChatMessage.Emoticon chosenValue = acAdapter.getItem(position);
+                // delete start of emoticon from orig string
+                text.delete(lastOpenParensIndex, text.length());
+                // rebuild text value
+                text.append(OPEN_PARENS + chosenValue.getName() + CLOSED_PARENS);
+                // span emoticon text with image
+                DynamicDrawableSpan span = BoomtownChatMessage.buildDynamicDrawableSpan(AutocompletePredictor.this.act.get().getApplicationContext(),
+                        AutocompletePredictor.this.msgEditText.get(),
+                        chosenValue,
+                        msgEditText.get().getLineHeight(),
+                        msgEditText.get().getLineHeight());
+                if (span != null) {
+                    text.setSpan(span, lastOpenParensIndex, text.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                }
+                // reset text
+                msgEditText.get().setText(text);
+                msgEditText.get().setSelection(text.toString().length());
+                lastOpenParensIndex = -1;
+                msgContainerListView.get().setEnabled(true);
+                acListView.get().setVisibility(View.INVISIBLE);
+                if (!act.get().isFinishing()) {
+                    act.get().runOnUiThread(() -> {
+                        acListEntriesEmoticon.clear();
+                        acAdapter.notifyDataSetChanged();
+                    });
+                }
+            });
+        }
+
+        /**
+         * Build the mention autocomplete list view adapter.
+         *
+         * @param text
+         * @param acListView
+         * @param msgContainerListView
+         * @param mentionToken
+         * @param ctx
+         */
+        public void buildMentionsListViewAdapter(final SpannableStringBuilder text,
+                                                 final WeakReference<ListView> acListView,
+                                                 final WeakReference<ListView> msgContainerListView,
+                                                 final String mentionToken,
+                                                 final Context ctx) {
+            if (mentionToken == null || mentionToken.length() < 1) {
+                acListView.get().setAdapter(null);
+                acListView.get().setVisibility(View.INVISIBLE);
+                msgContainerListView.get().setEnabled(true);
+                return;
+            }
+            acListEntriesMention = buildAutocompleteMentionsList(mentionToken, mentions);
+
+            setACListLayoutAttibutes(ctx, acListView.get(), acListEntriesMention);
+            msgContainerListView.get().setEnabled(false);
+
+            final ArrayAdapter<String> acAdapter = new ArrayAdapter<String>(act.get(),
+                    android.R.layout.simple_list_item_1, android.R.id.text1, acListEntriesMention);
+            // assign adapter to ListView
+            acListView.get().setAdapter(acAdapter);
+            // set ListView item click listener
+            acListView.get().setOnItemClickListener((parent, view, position, id) -> {
+                // ListView clicked item index
+                int itemPosition = position;
+                // ListView Clicked item value
+                String itemValue = (String) acListView.get().getItemAtPosition(position);
+                // delete start of mention from orig string
+                text.delete(lastATMentionIndex, lastATMentionIndex + mentionToken.length() + 1);
+                // rebuild text value
+                text.append(itemValue + SPACE);
+                msgEditText.get().setText(text.toString());
+                msgEditText.get().setSelection(text.toString().length());
+                msgContainerListView.get().setEnabled(true);
+                acListView.get().setVisibility(View.INVISIBLE);
+                if (!act.get().isFinishing()) {
+                    act.get().runOnUiThread(() -> {
+                        acListEntriesMention.clear();
+                        acAdapter.notifyDataSetChanged();
+                    });
+                }
+            });
+        }
+
+        /**
+         * Set height and visibility for given listview.
+         *
+         * @param ctx
+         * @param acListView
+         * @param acListEntries
+         */
+        public void setACListLayoutAttibutes(Context ctx, ListView acListView, List<?> acListEntries) {
+            float density = ctx.getResources().getDisplayMetrics().density;
+            int height = (int) ((float) acListEntries.size() * 44f * density + 40f);
+            if (height > ((int) 400f * density)) {
+                height = (int) (400f * density);
+            }
+            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) acListView.getLayoutParams();
+            lp.height = height;
+            acListView.setLayoutParams(lp);
+            acListView.setVisibility(View.VISIBLE);
+            acListView.bringToFront();
+        }
+
+        /**
+         * Returns a list of all known mentions that start with given text.
+         *
+         * @param text         the token to search for
+         * @param mentionsList a list of known mentions
+         * @return an empty list if text does not start with "@";
+         * otherwise a list of mentions for the mention autocomplete adapter
+         */
+        protected List<String> buildAutocompleteMentionsList(final String text, List<String> mentionsList) {
+            List<String> ret = new ArrayList<>();
+            for (String mention : mentionsList) {
+                if (mention.substring(1).toLowerCase().startsWith(text.toLowerCase())) {
+                    ret.add(mention);
+                }
+            }
+            return ret;
+        }
+
+        /**
+         * @param text
+         * @return a list of emoticons that start with the given text
+         */
+        protected List<BoomtownChatMessage.Emoticon> buildAutocompleteEmoticonsList(final String text,
+                                                                                    final Map<String, BoomtownChatMessage.Emoticon> emoticonsMap) {
+            if (text == null || emoticonsMap == null) {
+                return null;
+            }
+            List<BoomtownChatMessage.Emoticon> ret = new ArrayList<>();
+            for (String key : emoticonsMap.keySet()) {
+                if (key.startsWith(text)) {
+                    ret.add(emoticonsMap.get(key));
+                }
+            }
+            return ret;
+        }
+
+    }
+
+    /**
+     * @author fbeachler
+     */
+    private class ChatMessageEditWatcher implements TextWatcher {
+
+        private WeakReference<InputMethodManager> imm;
+
+        public ChatMessageEditWatcher(WeakReference<InputMethodManager> imm) {
+            this.imm = imm;
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (s.toString().length() == 0) {
+                dismissKeyboard(imm.get());
+                messagesContainer.setEnabled(true);
+                mAutocompleteListView.setVisibility(View.GONE);
+                chatSendButton.setEnabled(false);
+            } else {
+                chatSendButton.setEnabled(true);
+                acPredictor.showAutoCompleteList(s);
+            }
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            // noop
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+            // noop
+        }
+    }
+
+    /**
+     * @author fbeachler
+     */
+    public static class EmoticonListAdapter extends ArrayAdapter<BoomtownChatMessage.Emoticon> {
+
+        public EmoticonListAdapter(Context context, int resource) {
+            super(context, resource);
+        }
+
+        public EmoticonListAdapter(Context context, int resource, List<BoomtownChatMessage.Emoticon> items) {
+            super(context, resource, items);
+        }
+
+        @NonNull
+        @Override
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+            View v = convertView;
+            if (v == null) {
+                LayoutInflater vi;
+                vi = LayoutInflater.from(getContext());
+                v = vi.inflate(R.layout.emoticon_list_row, null);
+            }
+            BoomtownChatMessage.Emoticon p = getItem(position);
+            if (p != null) {
+                TextView tt1 = v.findViewById(R.id.txt);
+                WebView iv1 = v.findViewById(R.id.img);
+                if (tt1 != null) {
+                    tt1.setText(String.format("(%s)", p.getName()));
+                }
+                if (iv1 != null) {
+                    String data = null;
+                    switch (p.getType()) {
+                        case ASSET_GIF:
+                        case ASSET_PNG:
+                            data = "<body> <img src = \"" + p.getId() + "\"/></body>";
+                            break;
+                        default:
+                            break;
+                    }
+                    iv1.loadDataWithBaseURL("file:///android_asset/", data, "text/html", "UTF-8", null);
+                }
+            }
+            return v;
+        }
+
+    }
+
+    public Map<String, BoomtownChatMessage.Emoticon> getChatEmoticons() {
+        return chatEmoticons;
+    }
+
+    public void setChatEmoticons(Map<String, BoomtownChatMessage.Emoticon> chatEmoticons) {
+        this.chatEmoticons = chatEmoticons;
+    }
+
+    /**
+     * Get emoticon images from assets folder.
+     *
+     * @param path asset path (from root) to index for emoticons
+     * @return an empty map if no "emoticon_*" drawables are found, otherwise a map of emoticon names and asset paths
+     */
+    public Map<String, BoomtownChatMessage.Emoticon> buildEmoticonsIndexFromAssets(String path) {
+        Map<String, BoomtownChatMessage.Emoticon> ret = new HashMap<>();
+        if (path == null) {
+            path = "";
+        }
+//        try {
+//            String[] list = getAssets().list(path);
+//            if (list != null && list.length > 0) {
+//                for (String f : list) {
+//                    String n = f.toLowerCase();
+//                    if (n.startsWith(BoomtownChatMessage.EMOTICON)) {
+//                        String key = n.replace(BoomtownChatMessage.EMOTICON + BoomtownChatMessage.UNDERSCORE, "")
+//                                .replace(BoomtownChatMessage.Emoticon.EXT_PNG, "")
+//                                .replace(BoomtownChatMessage.Emoticon.EXT_GIF, "");
+//                        BoomtownChatMessage.Emoticon e = new BoomtownChatMessage.Emoticon(key, path + BoomtownChatMessage.SLASH + f);
+//                        ret.put(key, e);
+//                    }
+//                }
+//            }
+//        } catch (IOException e) {
+//            Log.e(TAG, Log.getStackTraceString(e));
+//        }
+        return ret;
+    }
+
+    /**
+     * Use reflection to get all drawables in {@link com.goboomtown.boomtownchat.R.drawable}
+     * with a name starting with "emoticon_" and build a map of resource IDs.
+     *
+     * @return an empty map if no "emoticon_*" drawables are found, otherwise a map of emoticon names and resource IDs
+     */
+    public Map<String, BoomtownChatMessage.Emoticon> buildEmoticonsIndexFromResources() {
+        Map<String, BoomtownChatMessage.Emoticon> ret = new HashMap<>();
+//        R.drawable gsDrawables = new R.drawable();
+//        Field[] fields = gsDrawables.getClass().getFields();
+//        for (Field f : fields) {
+//            String n = f.getName().toLowerCase();
+//            if (n.startsWith("emoticon")) {
+//                String key = n.replace("emoticon_", "");
+//                try {
+//                    BoomtownChatMessage.Emoticon e = new BoomtownChatMessage.Emoticon(key, f.getInt(gsDrawables));
+//                    ret.put(key, e);
+//                } catch (IllegalAccessException e) {
+//                    Log.w(TAG, Log.getStackTraceString(e));
+//                }
+//            }
+//        }
+        return ret;
+    }
 
 }

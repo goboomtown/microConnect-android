@@ -3,6 +3,7 @@ package com.goboomtown.microconnect.btconnecthelp.activity;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -10,12 +11,16 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
+import android.os.AsyncTask;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.DynamicDrawableSpan;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebViewFragment;
+import android.webkit.WebView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -23,22 +28,39 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.goboomtown.microconnect.btconnecthelp.widget.WebImageView;
-import com.goboomtown.microconnect.chat.BoomtownChat;
-import com.goboomtown.microconnect.chat.BoomtownChatMessage;
+//import com.goboomtown.BoomtownMember.R;
+import com.goboomtown.activity.BoomtownComm;
+//import com.goboomtown.api.BoomtownAPI;
+//import com.goboomtown.api.Constants;
+//import com.goboomtown.chat.BoomtownChat;
+//import com.goboomtown.chat.BoomtownChatMessage;
+//import com.goboomtown.BoomtownChat;
+//import com.goboomtown.chat.BoomtownChatMessage;
+//import com.goboomtown.core.activity.BaseActivity;
+//import com.goboomtown.core.widget.WebImageView;
+//import com.goboomtown.model.BoomtownComm;
+import com.goboomtown.chat.BoomtownChat;
+import com.goboomtown.chat.BoomtownChatMessage;
+import com.goboomtown.fragment.WebViewFragment;
 import com.goboomtown.microconnect.R;
+import com.goboomtown.microconnect.btconnecthelp.widget.WebImageView;
+import com.wefika.flowlayout.FlowLayout;
 
-import java.io.IOException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
- * @author Larry Borsato on 2016-07-12.
+ * @author Technovibe on 17-04-2015.
  * @author fbeachler
  */
 public class ChatAdapter extends BaseAdapter {
@@ -46,22 +68,32 @@ public class ChatAdapter extends BaseAdapter {
     public static final String TAG = ChatAdapter.class.getSimpleName();
 
     private final List<BoomtownChatMessage> chatMessages;
-    public ChatFragment chatFragment;
+    private ChatAdapterClickListener adapterListener;
     private Activity context;
-    Bitmap bitmap;
-    ProgressDialog pDialog;
-    ViewHolder holder;
-    BoomtownChatMessage chatMessage;
-    Bitmap bmp;
-    Bitmap bmpRight;
+    private LayoutInflater vi;
+    private Bitmap bitmap;
+    private ProgressDialog pDialog;
+    private ViewHolder holder;
+    private BoomtownChatMessage chatMessage;
+    private Bitmap bmp;
+    private Bitmap bmpRight;
     private WebViewFragment fragmentWebView;
+    private final Map<String, BoomtownChatMessage.Emoticon> emoticonMap;
 
-
-    public ChatAdapter(Activity context, List<BoomtownChatMessage> chatMessages) {
+    public ChatAdapter(Activity context, ChatAdapterClickListener adapterListener, List<BoomtownChatMessage> chatMessages, Map<String, BoomtownChatMessage.Emoticon> emoticonMap) {
+        if (context == null) {
+            throw new IllegalArgumentException("null context given, aborting");
+        }
+        if (adapterListener == null) {
+            throw new IllegalArgumentException("null listener given, aborting");
+        }
         this.context = context;
+        this.adapterListener = adapterListener;
         this.chatMessages = chatMessages;
         BoomtownChat.sharedInstance().avatars = new HashMap<String, Object>();
         fragmentWebView = new WebViewFragment();
+        this.emoticonMap = emoticonMap;
+        vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     }
 
     @Override
@@ -91,7 +123,6 @@ public class ChatAdapter extends BaseAdapter {
     public View getView(final int position, View convertView, ViewGroup parent) {
         final ViewHolder holder;
         final BoomtownChatMessage chatMessage = getItem(position);
-        LayoutInflater vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
         if (convertView == null) {
             convertView = vi.inflate(R.layout.list_item_chat_message, null);
@@ -100,163 +131,302 @@ public class ChatAdapter extends BaseAdapter {
         } else {
             holder = (ViewHolder) convertView.getTag();
         }
-
-        boolean isMe = chatMessage.isMe();//Just a dummy check to simulate whether it me or other sender
+        // check whether msg from me or other sender
+        boolean isMe = chatMessage.isMe();
         setAlignment(holder, isMe);
-        String message = chatMessage.getMessage();
-        if (message != null && !message.isEmpty()) {
+        Spannable message = chatMessage.getMessage();
+        if (message != null && !message.toString().isEmpty()) {
             holder.contentWithBG.setVisibility(View.VISIBLE);
-            holder.txtMessage.setText(chatMessage.getMessage());
+            Spannable msgTxt = BoomtownChatMessage.processTxtWithEmoticons(chatMessage.getMessage(), emoticonMap, new BoomtownChatMessage.EmoticonSpannableBuilderStrategy() {
+                @Override
+                public DynamicDrawableSpan buildDynamicDrawableSpan(BoomtownChatMessage.Emoticon emot) {
+                    return BoomtownChatMessage.buildDynamicDrawableSpan(context, holder.txtMessage, emot, holder.txtMessage.getLineHeight(), holder.txtMessage.getLineHeight());
+                }
+            });
+            msgTxt = BoomtownChatMessage.processTxtWithLinks(context, msgTxt);
+            holder.txtMessage.setClickable(true);
+            holder.txtMessage.setText(msgTxt);
         } else {
             holder.contentWithBG.setVisibility(View.GONE);
         }
+//        holder.txtMessage.setMovementMethod(LinkMovementMethod.getInstance());
+        holder.txtMessage.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+                if (chatMessage.callId != null) {
+                    callAnswer(chatMessage.callId, holder.txtMessage.getText().toString());
+                }
+            }
+        });
+
         holder.txtInfo.setText(chatMessage.fromName + "  " + chatMessage.getHumanDate());
+
         holder.btnInfo.setText(chatMessage.fromName + "  " + chatMessage.getHumanDate());
         holder.btnInfo.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // Perform action on click
-                Button btn = (Button) v;
-                chatFragment.addMention(btn.getText().toString());
+                if (adapterListener != null) {
+                    Button btn = (Button) v;
+                    adapterListener.onClickChatBtnInfo(v, btn.getText().toString());
+                }
             }
         });
+        // clear action buttons
+        for (int i = holder.actionButtonWrapper.getChildCount(); i >= 0; i--) {
+            holder.actionButtonWrapper.removeView(holder.actionButtonWrapper.getChildAt(i));
+        }
 
-        holder.avatarLeft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chatFragment.addMention(holder.btnInfo.getText().toString());
-            }
-        });
+        JSONArray actions = chatMessage.getActions();
+        buildActionButtons(actions, holder.actionButtonWrapper);
 
-        holder.avatarRight.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                chatFragment.addMention(holder.btnInfo.getText().toString());
-            }
-        });
+        if (!isMe) {
+            holder.avatarLeft.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (adapterListener != null) {
+                        adapterListener.onClickChatAvatarLeft(v, holder.btnInfo.getText().toString());
+                    }
+                }
+            });
+        } else {
+            holder.avatarRight.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (adapterListener != null) {
+                        adapterListener.onClickChatAvatarRight(v, holder.btnInfo.getText().toString());
+                    }
+                }
+            });
+        }
+        // load avatar in background
+        (new LoadAvatarTask()).execute(chatMessage, holder, new WeakReference<Activity>(context), new WeakReference<ChatAdapter>(this));
+        // load attachment preview
+        holder.attachment.setVisibility(View.GONE);
+        holder.txtMessage.setVisibility(View.GONE);
+        holder.actionButtonWrapper.setVisibility(View.GONE);
+        holder.htmlMessage.setVisibility(View.GONE);
 
-        if (chatMessage.preview != null) {
-            holder.attachment.setVisibility(View.VISIBLE);
-            holder.attachment.mRectangular = true;
-            holder.attachment.setImageUrl(chatMessage.preview);
-            holder.attachment.invalidate();
-            if (chatMessage.url != null) {
-                holder.imageUrl = chatMessage.url;
-                holder.attachment.setOnClickListener(new View.OnClickListener() {
+        switch( chatMessage.messageType ) {
+            case kTypeAttachment:
+                holder.attachment.setVisibility(View.VISIBLE);
+                holder.attachment.mRectangular = true;
+                holder.attachment.setImageUrl(chatMessage.preview);
+                holder.attachment.invalidate();
+                if (chatMessage.url != null) {
+                    holder.imageUrl = chatMessage.url;
+                    holder.attachment.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Log.d(TAG, "chat attachment clicked (" + holder.imageUrl + ")");
+                            if (adapterListener != null) {
+                                adapterListener.onClickChatAttachment(v, holder.imageUrl);
+                            }
+                        }
+                    });
+                }
+                break;
+            case kTypeKB:
+                holder.txtMessage.setVisibility(View.VISIBLE);
+                holder.htmlMessage.setVisibility(View.GONE);
+                String kbUrl = kbUrl(context, chatMessage.kb_id);
+//                holder.htmlMessage.loadUrl(kbUrl);
+                String html = chatMessage.kb_preview;
+                html = html.replace("<p>", "\n\n");
+                html = html.replace("<br>", "\n\n");
+//                html = "<html><body" + html + "</body></html>";
+                holder.txtMessage.setText(html);
+//                holder.htmlMessage.setWebViewClient(new WebViewClient() {
+//                                                        @Override
+//                                                        public void onPageFinished(WebView webView, String url) {
+//                                                            super.onPageFinished(webView, url);
+//                                                            holder.contentWithBG.requestLayout();
+//                                                        }
+//                                                    }
+//                );
+//                holder.htmlMessage.loadDataWithBaseURL(null, html, "text/html", "utf-8", null);
+                holder.txtMessage.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        context.runOnUiThread(new Runnable() {
-                            public void run() {
-                                Log.d("ChatFragment", holder.imageUrl);
-                                chatFragment.showWebView(holder.imageUrl);
-                            }
-                        });
-                    }
-                });
-            }
-        } else holder.attachment.setVisibility(View.GONE);
+                        Log.d(TAG, "KB clicked (" + chatMessage.kb_title + ")");
+                        String kbUrl = kbUrl(context, chatMessage.kb_id);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final Bitmap bmp = getAvatarForUser(chatMessage);
-                context.runOnUiThread(new Runnable() {
-                    public void run() {
-                        if (bmp != null) {
-                            holder.avatarLeft.setImageBitmap(bmp);
-                            holder.avatarRight.setImageBitmap(bmp);
+                        if (adapterListener != null) {
+                            adapterListener.onClickKB(v, kbUrl, chatMessage.kb_title);
                         }
                     }
                 });
-            }
-        }).start();
+                holder.txtMessage.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        Log.d(TAG, "KB clicked (" + chatMessage.kb_title + ")");
+                        String kbUrl = kbUrl(context, chatMessage.kb_id);
+
+                        if (adapterListener != null) {
+                            adapterListener.onClickKB(v, kbUrl, chatMessage.kb_title);
+                        }
+                        return true;
+                    }
+                });
+                break;
+            case kTypeVideoChat:
+            case kTypeOther:
+                holder.txtMessage.setVisibility(View.VISIBLE);
+                holder.actionButtonWrapper.setVisibility(View.VISIBLE);
+                break;
+            default:
+                break;
+        }
+//        if (chatMessage.preview != null && chatMessage.preview.length() > 0) {
+//            holder.attachment.setVisibility(View.VISIBLE);
+//            holder.attachment.mRectangular = true;
+//            holder.attachment.setImageUrl(chatMessage.preview);
+//            holder.attachment.invalidate();
+//            if (chatMessage.url != null) {
+//                holder.imageUrl = chatMessage.url;
+//                holder.attachment.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View v) {
+//                        Log.d(TAG, "chat attachment clicked (" + holder.imageUrl + ")");
+//                        if (adapterListener != null) {
+//                            adapterListener.onClickChatAttachment(v, holder.imageUrl);
+//                        }
+//                    }
+//                });
+//            }
+//        }
 
         return convertView;
     }
 
+    public String kbUrl(final Context applicationContext, String kb_id) {
+//        AuthenticationStore authStore = AuthenticationStore.getInstance(applicationContext);
+//        final String authToken = authStore.getAuthToken();
+        String kbUrl = "";//String.format("%s?id=%s&authtoken=%s",BoomtownArticlePage, kb_id, authToken);
+        return kbUrl;
+    }
+
+    /**
+     * Add chat message.
+     *
+     * @param message
+     */
     public void add(BoomtownChatMessage message) {
         chatMessages.add(message);
     }
 
+    /**
+     * Add list of chat messages.
+     *
+     * @param messages
+     */
     public void add(List<BoomtownChatMessage> messages) {
         chatMessages.addAll(messages);
     }
 
-    private void setAlignment(ViewHolder holder, boolean isMe) {
-        if (isMe) {
-            holder.contentWithBG.setBackgroundResource(R.drawable.in_message_bg);
-
-            LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) holder.contentPanel.getLayoutParams();
-            layoutParams.gravity = Gravity.RIGHT;
-            holder.contentPanel.setLayoutParams(layoutParams);
-
-            layoutParams = (LinearLayout.LayoutParams) holder.contentWithBG.getLayoutParams();
-            layoutParams.gravity = Gravity.RIGHT;
-            holder.contentWithBG.setLayoutParams(layoutParams);
-
-            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) holder.content.getLayoutParams();
-            lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT, 0);
-            lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-            holder.content.setLayoutParams(lp);
-            layoutParams = (LinearLayout.LayoutParams) holder.txtMessage.getLayoutParams();
-            layoutParams.gravity = Gravity.RIGHT;
-            holder.txtMessage.setLayoutParams(layoutParams);
-            layoutParams = (LinearLayout.LayoutParams) holder.attachment.getLayoutParams();
-            layoutParams.gravity = Gravity.RIGHT;
-            holder.attachment.setLayoutParams(layoutParams);
-
-            layoutParams = (LinearLayout.LayoutParams) holder.txtInfo.getLayoutParams();
-            layoutParams.gravity = Gravity.RIGHT;
-            holder.btnInfo.setLayoutParams(layoutParams);
-            holder.txtInfo.setLayoutParams(layoutParams);
-            holder.avatarLeft.setVisibility(View.INVISIBLE);
-            holder.avatarRight.setVisibility(View.VISIBLE);
-        } else {
-            holder.contentWithBG.setBackgroundResource(R.drawable.out_message_bg);
-
-            LinearLayout.LayoutParams layoutParams = (LinearLayout.LayoutParams) holder.contentPanel.getLayoutParams();
-            layoutParams.gravity = Gravity.LEFT;
-            holder.contentPanel.setLayoutParams(layoutParams);
-
-            layoutParams = (LinearLayout.LayoutParams) holder.contentWithBG.getLayoutParams();
-            layoutParams.gravity = Gravity.LEFT;
-            holder.contentWithBG.setLayoutParams(layoutParams);
-
-            RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) holder.content.getLayoutParams();
-            lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, 0);
-            lp.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
-            holder.content.setLayoutParams(lp);
-            layoutParams = (LinearLayout.LayoutParams) holder.txtMessage.getLayoutParams();
-            layoutParams.gravity = Gravity.LEFT;
-            holder.txtMessage.setLayoutParams(layoutParams);
-            layoutParams = (LinearLayout.LayoutParams) holder.attachment.getLayoutParams();
-            layoutParams.gravity = Gravity.LEFT;
-            holder.attachment.setLayoutParams(layoutParams);
-
-            layoutParams = (LinearLayout.LayoutParams) holder.txtInfo.getLayoutParams();
-            layoutParams.gravity = Gravity.LEFT;
-            holder.btnInfo.setLayoutParams(layoutParams);
-            holder.txtInfo.setLayoutParams(layoutParams);
-            holder.avatarLeft.setVisibility(View.VISIBLE);
-            holder.avatarRight.setVisibility(View.INVISIBLE);
-        }
+    /**
+     * Initiate a video chat for the given call id.
+     *
+     * @param call_id
+     * @param alert
+     */
+    public void callAnswer(String call_id, String alert) {
+//        Intent intent = new Intent();
+//        if (call_id != null) {
+//            intent.putExtra(BoomtownAPI.kCallId, call_id);
+//        }
+//        ((BaseActivity) context).showProgressWithMessage(context.getString(R.string.msg_starting_video));
+//        BoomtownAPI.sharedInstance().apiMembersCommGet(call_id, alert, context, BoomtownComm.kTypeVideo);
     }
 
-    private ViewHolder createViewHolder(View v) {
+    /**
+     * Set text message alignment and chat bubble bg.
+     *
+     * @param holder
+     * @param isMe
+     */
+    protected void setAlignment(ViewHolder holder, boolean isMe) {
+        // default !isMe
+        int alignGravity = Gravity.LEFT;
+        int bgResourceId = R.drawable.out_message_bg;
+        int[] holderContentRuleVerbs = {RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.ALIGN_PARENT_LEFT};
+        int[] avatarVisibilities = {View.VISIBLE, View.INVISIBLE};
+        if (isMe) {
+            alignGravity = Gravity.RIGHT;
+            bgResourceId = R.drawable.in_message_bg;
+            holderContentRuleVerbs[0] = RelativeLayout.ALIGN_PARENT_LEFT;
+            holderContentRuleVerbs[1] = RelativeLayout.ALIGN_PARENT_RIGHT;
+            avatarVisibilities[0] = View.INVISIBLE;
+            avatarVisibilities[1] = View.VISIBLE;
+        }
+        // set chat bubble bg
+        holder.contentWithBG.setBackgroundResource(bgResourceId);
+        // align panel
+        LinearLayout.LayoutParams llp = (LinearLayout.LayoutParams) holder.contentPanel.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.contentPanel.setLayoutParams(llp);
+        // align wrapper
+        llp = (LinearLayout.LayoutParams) holder.contentWithBG.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.contentWithBG.setLayoutParams(llp);
+        // align wrapper
+        RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) holder.content.getLayoutParams();
+        rlp.addRule(holderContentRuleVerbs[0], 0);
+        rlp.addRule(holderContentRuleVerbs[1]);
+        holder.content.setLayoutParams(rlp);
+        // align txt msg + attachment
+        llp = (LinearLayout.LayoutParams) holder.txtMessage.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.txtMessage.setLayoutParams(llp);
+
+        llp = (LinearLayout.LayoutParams) holder.htmlMessage.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.htmlMessage.setLayoutParams(llp);
+
+        llp = (LinearLayout.LayoutParams) holder.attachment.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.attachment.setLayoutParams(llp);
+        // align txtinfo + btninfo
+        llp = (LinearLayout.LayoutParams) holder.txtInfo.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.txtInfo.setLayoutParams(llp);
+        llp = (LinearLayout.LayoutParams) holder.btnInfo.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.btnInfo.setLayoutParams(llp);
+        // align action buttons
+        llp = (LinearLayout.LayoutParams) holder.actionButtonWrapper.getLayoutParams();
+        llp.gravity = alignGravity;
+        holder.actionButtonWrapper.setLayoutParams(llp);
+        // avatar visibility
+        holder.avatarLeft.setVisibility(avatarVisibilities[0]);
+        holder.avatarRight.setVisibility(avatarVisibilities[1]);
+    }
+
+    /**
+     *
+     * @param v
+     * @return a view holder hydrated with views for this adapter
+     */
+    protected ViewHolder createViewHolder(View v) {
         ViewHolder holder = new ViewHolder();
-        holder.txtMessage = (TextView) v.findViewById(R.id.txtMessage);
-        holder.content = (LinearLayout) v.findViewById(R.id.content);
-        holder.contentPanel = (LinearLayout) v.findViewById(R.id.contentPanel);
-        holder.contentWithBG = (LinearLayout) v.findViewById(R.id.contentWithBackground);
-        holder.btnInfo = (Button) v.findViewById(R.id.btnInfo);
-        holder.txtInfo = (TextView) v.findViewById(R.id.txtInfo);
-        holder.avatarLeft = (ImageView) v.findViewById(R.id.avatarLeft);
-        holder.avatarRight = (ImageView) v.findViewById(R.id.avatarRight);
-        holder.attachment = (WebImageView) v.findViewById(R.id.attachment);
+        holder.txtMessage = v.findViewById(R.id.txtMessage);
+        holder.content = v.findViewById(R.id.content);
+        holder.contentPanel = v.findViewById(R.id.contentPanel);
+        holder.contentWithBG = v.findViewById(R.id.contentWithBackground);
+        holder.btnInfo = v.findViewById(R.id.btnInfo);
+        holder.txtInfo = v.findViewById(R.id.txtInfo);
+        holder.avatarLeft = v.findViewById(R.id.avatarLeft);
+        holder.avatarRight = v.findViewById(R.id.avatarRight);
+        holder.attachment = v.findViewById(R.id.attachment);
+        holder.actionButtonWrapper = v.findViewById(R.id.wrap_chat_msg_act_btns);
         holder.handle = null;
         holder.imageUrl = null;
+        holder.htmlMessage = v.findViewById(R.id.htmlMessage);
         return holder;
     }
 
+    public void clearMessages() {
+        this.chatMessages.clear();
+        notifyDataSetChanged();
+    }
 
     private static class ViewHolder {
         public TextView txtMessage;
@@ -270,44 +440,114 @@ public class ChatAdapter extends BaseAdapter {
         public String handle;
         public String imageUrl;
         public WebImageView attachment;
+        public FlowLayout actionButtonWrapper;
+        public WebView htmlMessage;
     }
 
+    /**
+     * Load the user avatar web image.
+     *
+     * @param chatMessage
+     * @return
+     */
     public Bitmap getAvatarForUser(BoomtownChatMessage chatMessage) {
         String urlString = null;
         Bitmap avatar = (Bitmap) BoomtownChat.sharedInstance().avatars.get(chatMessage.from);
-        if (avatar != null)
+        if (avatar != null) {
             return avatar;
-
+        }
         if (chatMessage.avatar != null && !chatMessage.avatar.isEmpty()) {
             urlString = chatMessage.avatar;
         } else {
             String resource = chatMessage.from;
-            if (resource == null)
+            if (resource == null) {
                 return null;
-
+            }
             String[] tokens = resource.split(";");
             String from = tokens[0];
+            tokens = from.split(":");
+            if (tokens.length > 1) {
+                urlString = BoomtownChat.sharedInstance().avatarRetrievalAPIBaseURL + "/api/v1/avatar/" + tokens[0] + "/" + tokens[1] + "/50,50";
+            }
         }
-        URL url = null;
+        Log.d(TAG, "#getAvatarForUser url: " + urlString);
+//        if (urlString == null || urlString.isEmpty() || Constants.NULLSTR.equals(urlString)) {
+        if ( urlString == null || urlString.isEmpty() ) {
+            return null;
+        }
+        URL url;
         try {
             url = new URL(urlString);
             HttpURLConnection conn =
                     (HttpURLConnection) url.openConnection();
             conn.setDoInput(true);
             conn.connect();
-
             InputStream is = conn.getInputStream();
-            avatar = getclip(BitmapFactory.decodeStream(is));
+            avatar = ChatAdapter.getclip(BitmapFactory.decodeStream(is));
             BoomtownChat.sharedInstance().avatars.put(chatMessage.from, avatar);
-        } catch (MalformedURLException e) {
-            Log.e(TAG, Log.getStackTraceString(e));
-        } catch (IOException e) {
-            Log.e(TAG, Log.getStackTraceString(e));
+        } catch (Throwable e) {
+            Log.d(TAG, Log.getStackTraceString(e));
+            Log.w(TAG, "unable to load avatar from URL: " + urlString);
         }
         return avatar;
     }
 
-    public Bitmap getclip(Bitmap bitmap) {
+    /**
+     * Build BT action buttons dynamically.  Adds new chat buttons to container
+     * with click listeners that invoke {@link ChatAdapter.ChatAdapterClickListener#onClickChatActionButton(View, String)}.
+     * Actions JSON should look like: [{"key":"65c319da57bb149cbf7a411983d7f8bc","lbl":"Custom Item Taxes","uri":"bt-bot:\/\/A3C-37E?key=65c319da57bb149cbf7a411983d7f8bc"},{"key":"31ef931599be39d1a84bf3d05e95bf6e","lbl":"Creating Taxes","uri":"bt-bot:\/\/A3C-37E?key=31ef931599be39d1a84bf3d05e95bf6e"},{"key":"93251e257652394d4b840c8ac95f9bac","lbl":"Applying Taxes, Fees, and Discounts","uri":"bt-bot:\/\/A3C-37E?key=93251e257652394d4b840c8ac95f9bac"},{"key":"9fe59e6554efeb272934a637938551fa","lbl":"Associating Taxes w\/ Individual Items","uri":"bt-bot:\/\/A3C-37E?key=9fe59e6554efeb272934a637938551fa"},{"key":"17f956b3682068879cc1aec7576f0874","lbl":"Nevermind","uri":"bt-bot:\/\/A3C-37E?key=17f956b3682068879cc1aec7576f0874"}]
+     *
+     * @param actions
+     * @param container
+     */
+    protected void buildActionButtons(JSONArray actions, ViewGroup container) {
+        // set container visibility
+        if (actions == null || actions.length() < 1) {
+            container.setVisibility(View.INVISIBLE);
+            return;
+        }
+        container.setVisibility(View.VISIBLE);
+        // add new buttons
+        for (int i = 0; i < actions.length(); i++) {
+            try {
+                JSONObject action = actions.getJSONObject(i);
+                Spannable btnLabel = new SpannableString(action.optString(BoomtownChatMessage.JSON_KEY_LBL));
+                final String btnUri = action.optString(BoomtownChatMessage.JSON_KEY_URI);
+                if (btnLabel != null && btnUri != null) {
+                    final Button btn = new Button(context);
+                    FlowLayout.LayoutParams llp = new FlowLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                    btn.setLayoutParams(llp);
+                    btn.setAllCaps(false);  // override default styling else lose spannable data via #AllCapsTransformationMethod
+                    btnLabel = BoomtownChatMessage.processTxtWithEmoticons(btnLabel, emoticonMap, new BoomtownChatMessage.EmoticonSpannableBuilderStrategy() {
+                        @Override
+                        public DynamicDrawableSpan buildDynamicDrawableSpan(BoomtownChatMessage.Emoticon emot) {
+                            return BoomtownChatMessage.buildDynamicDrawableSpan(context, btn, emot, btn.getLineHeight() * 2, btn.getLineHeight() * 2);
+                        }
+                    });
+                    btn.setText(btnLabel);
+                    btn.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (adapterListener != null) {
+                                adapterListener.onClickChatActionButton(v, btnUri);
+                            }
+                        }
+                    });
+                    container.addView(btn);
+                }
+            } catch (JSONException e) {
+                Log.e(TAG, Log.getStackTraceString(e));
+            }
+        }
+    }
+
+    /**
+     * Clip a bitmap.
+     *
+     * @param bitmap
+     * @return
+     */
+    public static Bitmap getclip(Bitmap bitmap) {
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         Bitmap output = Bitmap.createBitmap(bitmap.getWidth(),
@@ -326,4 +566,52 @@ public class ChatAdapter extends BaseAdapter {
         return output;
     }
 
+    public static class LoadAvatarTask extends AsyncTask<Object, Void, Bitmap> {
+
+        private BoomtownChatMessage cm;
+        private ViewHolder holder;
+        private WeakReference<Activity> activity;
+        private WeakReference<ChatAdapter> adapter;
+
+        @Override
+        protected Bitmap doInBackground(Object... params) {
+            if (params == null || params.length < 1) {
+                return null;
+            }
+            cm = (BoomtownChatMessage) params[0];
+            holder = (ViewHolder) params[1];
+            activity = (WeakReference<Activity>) params[2];
+            adapter = (WeakReference<ChatAdapter>) params[3];
+            return adapter.get().getAvatarForUser(cm);
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            if (bitmap == null) {
+                return;
+            }
+            final Bitmap bmp = bitmap;
+            activity.get().runOnUiThread(new Runnable() {
+                public void run() {
+                    boolean isMe = cm.isMe();
+                    if (bmp != null) {
+                        if (!isMe) {
+                            holder.avatarLeft.setImageBitmap(bmp);
+                        } else {
+                            holder.avatarRight.setImageBitmap(bmp);
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    public interface ChatAdapterClickListener {
+        void onClickChatAttachment(View v, String imageUrl);
+        void onClickKB(View v, String kbUrl, String kbTitle);
+        void onClickChatBtnInfo(View v, String mention);
+        void onClickChatAvatarLeft(View v, String mention);
+        void onClickChatAvatarRight(View v, String mention);
+        void onClickChatActionButton(View v, String actionUrl);
+    }
 }
