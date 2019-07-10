@@ -91,10 +91,10 @@ dependencies {
 
     compile('com.squareup.okhttp3:okhttp:3.2.0') {
     }
-    compile("org.igniterealtime.smack:smack-android-extensions:$smack_lib_version") {
-    }
-    compile("org.igniterealtime.smack:smack-tcp:$smack_lib_version") {
-    }
+//    compile("org.igniterealtime.smack:smack-android-extensions:$smack_lib_version") {
+//    }
+//    compile("org.igniterealtime.smack:smack-tcp:$smack_lib_version") {
+//    }
     compile("joda-time:joda-time:$jodatime_version") {
     }
 

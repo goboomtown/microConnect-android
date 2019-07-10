@@ -34,6 +34,7 @@ allprojects {
     ext.global_runnerVersion = '1.0.0'
     ext.global_rulesVersion = '1.0.0'
     ext.global_espressoVersion = '3.0.0'
+    ext.smack_lib_version = "4.3.1" //"4.1.0"
 }
 
 task clean(type: Delete) {
@@ -50,7 +51,7 @@ ext {
     jersey_version = "2.22"
     jodatime_version = "2.3"
     junit_version = "4.12"
-    smack_lib_version = "4.1.0"
+    smack_lib_version = "4.3.1" //"4.1.0"
 }
 
 def siteUrl = 'https://github.com/goboomtown/microConnect-android'      // Homepage URL of the library

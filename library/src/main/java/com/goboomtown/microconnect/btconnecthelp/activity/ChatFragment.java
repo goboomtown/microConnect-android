@@ -44,10 +44,10 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.goboomtown.activity.BaseActivity;
-import com.goboomtown.activity.KBActivity;
-import com.goboomtown.chat.BoomtownChat;
-import com.goboomtown.chat.BoomtownChatMessage;
+import com.goboomtown.microconnect.chat.activity.BaseActivity;
+import com.goboomtown.microconnect.chat.activity.KBActivity;
+import com.goboomtown.microconnect.chat.chat.BoomtownChat;
+import com.goboomtown.microconnect.chat.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectIssue;
@@ -257,7 +257,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         }
 
         initControls(view);
-//        initLayoutListeners();
+        initLayoutListeners();
 
         emoticonsMap = getChatEmoticons();
         acPredictor = new AutocompletePredictor(new WeakReference<Activity>(mParent),
@@ -612,15 +612,15 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             public void onClick(View v) {
                 // Perform action on click
                 dismissKeyboard();
-//                if ( mInRoom ) {
-//                    ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
-//                    if (messageEdit != null) {
-//                        messageEdit.setText("");
-//                        scroll();
-//                    }
-//                } else {
-//                    ((BaseActivity)mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
-//                }
+                if ( mInRoom ) {
+                    ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+                    if (messageEdit != null) {
+                        messageEdit.setText("");
+                        scroll();
+                    }
+                } else {
+                    ((BaseActivity)mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+                }
             }
         });
 

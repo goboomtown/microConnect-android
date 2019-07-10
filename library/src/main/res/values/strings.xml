@@ -16,4 +16,22 @@
 
     <string name="cdesc_emoticonimg">emoticon image</string>
 
+    <string name="unable_to_send_presence">unable to send Presence stanza</string>
+    <string name="conn_failed_before_login">connection abruptly failed before login</string>
+
+    <string name="type_message">type message</string>
+    <string name="send">Send</string>
+    <string name="unable_to_start_bt_chat">Unable to start a Boomtown chat</string>
+    <string name="msg_joining_room">Joining room</string>
+    <string name="msg_connecting_to_chat_server">Connecting to chat server</string>
+
+    <string name="chat_error">Chat Error</string>
+    <string name="chat_room_login_fail">We were unable to login to this chat room.  Try again in a few minutes.</string>
+    <string name="chat_room_connect_fail">There was an unexpected error trying to connect to this chat room.</string>
+    <string name="chat_not_connected">Chat is not connected</string>
+    <string name="chat_room_joinroom_fail">There was an unexpected error trying to join this chat room.  Please try again in a few minutes.</string>
+
+    <string name="cdesc_an_icon_representing_a_chat_room">an icon representing a chat room</string>
+    <string name="kb_empty_preview_message">Click here to go to the knowledge base article.</string>
+
 </resources>

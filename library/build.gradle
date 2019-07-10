@@ -73,15 +73,23 @@ dependencies {
         exclude module: 'support-v4'
     }
 
-    implementation project(':boomtown-boomtownchat-android')
+//    implementation project(':boomtown-boomtownchat-android')
 
     // flow layout
     implementation "com.wefika:flowlayout:0.4.1"
 
     compile "com.squareup.okhttp3:okhttp:3.2.0"
-    compile "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
-    compile "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
+    api "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
+    api "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
     compile "joda-time:joda-time:$jodatime_version"
+
+//    compileOnly 'com.android.support:appcompat-v7:' + global_supportLibVersion;
+//    compile "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
+//    compile "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
+//    api 'org.igniterealtime.smack:smack-android-extensions:4.3.1'
+//    api 'org.igniterealtime.smack:smack-tcp:4.3.1'
+    // animated GIFs
+    api 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
