@@ -52,8 +52,6 @@ import com.goboomtown.microconnect.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectIssue;
 import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
-//import com.goboomtown.microconnect.chat.BoomtownChat;
-//import com.goboomtown.microconnect.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.R;
 
 import org.json.JSONArray;

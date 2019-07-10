@@ -1,0 +1,2 @@
+include ":boomtown-boomtownchat-android"
+project(":boomtown-boomtownchat-android").projectDir = new File(settingsDir, "modules/boomtown-boomtownchat-android")
