@@ -1,10 +1,13 @@
 package com.goboomtown.microconnect.btconnecthelp.activity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -15,8 +18,10 @@ import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.Editable;
@@ -43,11 +48,12 @@ import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.goboomtown.chat.BoomtownChat;
+import com.goboomtown.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.chat.activity.BaseActivity;
 import com.goboomtown.microconnect.chat.activity.KBActivity;
-import com.goboomtown.microconnect.chat.chat.BoomtownChat;
-import com.goboomtown.microconnect.chat.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectIssue;
@@ -85,7 +91,7 @@ import okhttp3.Response;
  * <p>
  * Created by Larry Borsato on 2016-07-12.
  */
-public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterClickListener {
+public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterClickListener, BoomtownChat.BoomtownChatListener {
 
     public static final String TAG = ChatFragment.class.getSimpleName();
 
@@ -179,6 +185,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         // Required empty public constructor
     }
 
+
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
@@ -208,7 +215,9 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
 
+        BoomtownChat.sharedInstance().context = mParent;
         BoomtownChat.sharedInstance().avatarRetrievalAPIBaseURL = "https://gnfktoh224eg-api.goboomtown.com";
+        BoomtownChat.sharedInstance().buildEmoticonsIndexFromAssets(BoomtownChatMessage.ASSET_PATH_EMOTICONS);
 
         mAutocompleteEntries = new ArrayList<>();
         mMentions = new ArrayList<>();
@@ -229,9 +238,6 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
         mUploadRequested = false;
 
-        String title = String.format("%s #%s", getString(R.string.ticket), mIssue.reference_num);
-        mHelpButton.setChatTitle(title);
-
         mBtnGetVideoChatHelp = (Button) view.findViewById(R.id.btn_get_video_chat_help);
         mBtnGetVideoChatHelp.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -247,6 +253,11 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             }
         });
 
+        if ( mIssue!=null && mIssue.reference_num!=null ) {
+            String title = String.format("%s #%s", getString(R.string.ticket), mIssue.reference_num);
+            mHelpButton.setChatTitle(title);
+        }
+
 //        mXmppInfo = BTConnectAPI.extractXmppInformation(mIssue.xmpp_data);
         mXmppInfo = BoomtownChat.extractXmppInformation(mIssue.xmpp_data, BTConnectAPI.sharedInstance().getKey());
         if (mXmppInfo != null) {
@@ -254,12 +265,16 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             if (mCommId != null) {
                 commGet(mCommId);
             }
+        } else {
+            warn(getString(R.string.app_name), getString(R.string.warn_unable_to_obtain_chat_server_information));
         }
 
         initControls(view);
-        initLayoutListeners();
+//        initLayoutListeners();
 
-        emoticonsMap = getChatEmoticons();
+
+//        emoticonsMap = getChatEmoticons();
+        emoticonsMap = BoomtownChat.sharedInstance().chatEmoticons;
         acPredictor = new AutocompletePredictor(new WeakReference<Activity>(mParent),
                 new WeakReference<ListView>(mAutocompleteListView),
                 new WeakReference<ListView>(messagesContainer),
@@ -465,6 +480,8 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         String me = mResource;
         String[] tokens = me.split(";");
         senderId = tokens[0];
+        BoomtownChat.sharedInstance().me = senderId;
+
         Map<String, String> participantInfo = (Map<String, String>) mChatRecord.participants_eligible.get(senderId);
         if (participantInfo != null)
             senderDisplayName = (String) participantInfo.get("name");
@@ -478,80 +495,83 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         }
         Collections.sort(mMentions);
 
-        BoomtownChat.sharedInstance().context = mParent;
         BoomtownChat.sharedInstance().participants_eligible = mChatRecord.participants_eligible;
-        BoomtownChat.sharedInstance().setListener(new BoomtownChat.BoomtownChatListener() {
-            @Override
-            public void onConnect() {
-                hideProgress();
-                showProgressWithMessage("Joining room");
-            }
 
-            @Override
-            public void onConnectError() {
+        BoomtownChat.sharedInstance().setListener(this);
+//        BoomtownChat.sharedInstance().listener = this;
 
-            }
-
+//        BoomtownChat.sharedInstance().setListener(new BoomtownChat.BoomtownChatListener() {
 //            @Override
-//            public void onTimeoutConnect() {
-//                Log.d("ChatFragment", "onTimeoutConnect");
+//            public void onConnect() {
+//                hideProgress();
+//                showProgressWithMessage("Joining room");
 //            }
-
-            @Override
-            public void onNotAuthenticate() {
-                Log.d("ChatFragment", "onNotAuthenticate");
-            }
-
-            @Override
-            public void onDisconnect(Exception e) {
-                Log.d("ChatFragment", "onDisconnect");
-            }
-
+//
 //            @Override
-//            public void onDisconnect() {
-//                Log.d("ChatFragment", "onDisconnect");
+//            public void onConnectError() {
 //
 //            }
-
-            @Override
-            public void onReceiveMessage(final BoomtownChatMessage message) {
-                if (message.from != null && message.from.equalsIgnoreCase(senderId))
-                    message.self = true;
-                mParent.runOnUiThread(new Runnable() {
-                    public void run() {
-                        displayMessage(message);
-                    }
-                });
-//                scroll();
-            }
-
-            @Override
-            public void onJoinRoom() {
-//                alertDialog.dismiss();
-                hideProgress();
-                Log.d("ChatFragment", "onJoinRoom");
-                mParent.runOnUiThread(new Runnable() {
-                    public void run() {
-                        mInRoom = true;
-//                        chatUploadButton.setEnabled(true);
-//                        chatSendButton.setEnabled(false);
-                    }
-                });
-            }
-
-            @Override
-            public void onJoinRoomNoResponse() {
-                hideProgress();
-                Log.d("ChatFragment", "onJoinRoomNoResponse");
-            }
-
-            @Override
-            public void onJoinRoomFailed(String reason) {
-                hideProgress();
-                Log.d("ChatFragment", "onJoinRoomNoResponse");
-            }
-
-        });
+//
+////            @Override
+////            public void onTimeoutConnect() {
+////                Log.d("ChatFragment", "onTimeoutConnect");
+////            }
+//
+//            @Override
+//            public void onNotAuthenticate() {
+//                Log.d("ChatFragment", "onNotAuthenticate");
+//            }
+//
+//            @Override
+//            public void onDisconnect(Exception e) {
+//                Log.d("ChatFragment", "onDisconnect");
+//            }
+//
+////            @Override
+////            public void onDisconnect() {
+////                Log.d("ChatFragment", "onDisconnect");
+////
+////            }
+//
+//            @Override
+//            public void onReceiveMessage(final BoomtownChatMessage message) {
+//                if (message.from != null && message.from.equalsIgnoreCase(senderId))
+//                    message.self = true;
+//                mParent.runOnUiThread(new Runnable() {
+//                    public void run() {
+//                        displayMessage(message);
+//                    }
+//                });
+////                scroll();
+//            }
+//
+//            @Override
+//            public void onJoinRoom() {
+////                alertDialog.dismiss();
+//                hideProgress();
+//                Log.d("ChatFragment", "onJoinRoom");
+//                mParent.runOnUiThread(new Runnable() {
+//                    public void run() {
+//                        mInRoom = true;
+////                        chatUploadButton.setEnabled(true);
+////                        chatSendButton.setEnabled(false);
+//                    }
+//                });
+//            }
+//
+//            @Override
+//            public void onJoinRoomNoResponse() {
+//                hideProgress();
+//                Log.d("ChatFragment", "onJoinRoomNoResponse");
+//            }
+//
+//            @Override
+//            public void onJoinRoomFailed(String reason) {
+//                hideProgress();
+//                Log.d("ChatFragment", "onJoinRoomNoResponse");
+//            }
+//
+//        });
 
         chatHistory = new ArrayList<BoomtownChatMessage>();
 //        adapter = new OldChatAdapter(mParent, new ArrayList<BoomtownChatMessage>());
@@ -568,6 +588,78 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         connect();
 
     }
+
+        @Override
+        public void onConnect() {
+            hideProgress();
+            showProgressWithMessage("Joining room");
+        }
+
+        @Override
+        public void onConnectError() {
+
+        }
+
+//            @Override
+//            public void onTimeoutConnect() {
+//                Log.d("ChatFragment", "onTimeoutConnect");
+//            }
+
+        @Override
+        public void onNotAuthenticate() {
+            Log.d("ChatFragment", "onNotAuthenticate");
+        }
+
+        @Override
+        public void onDisconnect(Exception e) {
+            Log.d("ChatFragment", "onDisconnect");
+        }
+
+//            @Override
+//            public void onDisconnect() {
+//                Log.d("ChatFragment", "onDisconnect");
+//
+//            }
+
+        @Override
+        public void onReceiveMessage(final BoomtownChatMessage message) {
+            if (message.from != null && message.from.equalsIgnoreCase(senderId))
+                message.self = true;
+            mParent.runOnUiThread(new Runnable() {
+                public void run() {
+                    displayMessage(message);
+                }
+            });
+//                scroll();
+        }
+
+        @Override
+        public void onJoinRoom() {
+//                alertDialog.dismiss();
+            hideProgress();
+            Log.d("ChatFragment", "onJoinRoom");
+            mParent.runOnUiThread(new Runnable() {
+                public void run() {
+                    mInRoom = true;
+                        chatUploadButton.setEnabled(true);
+//                        chatSendButton.setEnabled(false);
+                }
+            });
+        }
+
+        @Override
+        public void onJoinRoomNoResponse() {
+            hideProgress();
+            Log.d("ChatFragment", "onJoinRoomNoResponse");
+        }
+
+        @Override
+        public void onJoinRoomFailed(String reason) {
+            hideProgress();
+            Log.d("ChatFragment", "onJoinRoomNoResponse");
+        }
+
+
 
     private void initControls(View view) {
         titleView = (TextView) view.findViewById(R.id.title);
@@ -613,7 +705,8 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                 // Perform action on click
                 dismissKeyboard();
                 if ( mInRoom ) {
-                    ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+//                    ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+                    selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
                     if (messageEdit != null) {
                         messageEdit.setText("");
                         scroll();
@@ -674,17 +767,27 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             cmew = new ChatMessageEditWatcher(new WeakReference<>(imm));
             messageEdit.addTextChangedListener(cmew);
         }
+//        chatUploadButton.setEnabled(true);
         chatUploadButton.setOnClickListener(v -> {
             // Perform action on click
             dismissKeyboard(imm);
             if (mInRoom) {
-                ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
-                if (messageEdit != null) {
-                    messageEdit.setText("");
-                    scroll();
+                Activity activity = getActivity();
+                if ( mParent instanceof BTConnectHelpBaseActivity ) {
+//                    ((BTConnectHelpBaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+                    selectImage(mParent, 0, UPLOAD_TYPE_NONE);
+                    if (messageEdit != null) {
+                        messageEdit.setText("");
+                        scroll();
+                    }
+                } else {
+//                    Toast.makeText(mParent, "Your activity must extent BTConnectHelpBaseActivity to support attachments.", Toast.LENGTH_LONG).show();
+                    warn(getString(R.string.app_name), "Your activity must extent BTConnectHelpBaseActivity to support attachments.");
                 }
             } else {
-                ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+//                Toast.makeText(mParent, mParent.getString(R.string.msg_not_in_room), Toast.LENGTH_LONG).show();
+//                ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+                warn(getString(R.string.app_name), getString(R.string.msg_not_in_room));
             }
         });
 
@@ -697,7 +800,8 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                     messageEdit.setText("");
                     scroll();
                 } else {
-                    ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
+                    Toast.makeText(mParent, mParent.getString(R.string.msg_not_in_room), Toast.LENGTH_LONG).show();
+//                    ((BaseActivity) mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
                 }
             }
         });
@@ -1137,14 +1241,14 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
-//            case REQUEST_CAMERA:
-//                if (resultCode == RESULT_OK)
-//                    handlePhotoFromCamera(data);
-//                break;
-//            case SELECT_FILE:
-//                if (resultCode == RESULT_OK)
-//                    handlePhotoFromFile(data);
-//                break;
+            case REQUEST_CAMERA:
+                if (resultCode == Activity.RESULT_OK)
+                    handlePhotoFromCamera(data);
+                break;
+            case SELECT_FILE:
+                if (resultCode == Activity.RESULT_OK)
+                    handlePhotoFromFile(data);
+                break;
             case LOAD_MASKED_WALLET_REQUEST_CODE:
                 loadMaskedWallet(data);
                 break;
@@ -1269,31 +1373,42 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
 
     public void selectImage(Activity activity, int imageType, int uploadType) {
-//        mImageType  = imageType;
-//        mUploadType = uploadType;
-//        final CharSequence[] items = { "Take Photo", "Choose from Library", "Cancel" };
-//        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-//        builder.setTitle("Add Photo!");
-//        builder.setItems(items, new DialogInterface.OnClickListener() {
-//            @Override
-//            public void onClick(DialogInterface dialog, int item) {
-//                if (items[item].equals("Take Photo")) {
-//                    Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//                    startActivityForResult(intent, Settings.REQUEST_CAMERA);
-//                } else if (items[item].equals("Choose from Library")) {
-//                    Intent intent = new Intent(
-//                            Intent.ACTION_PICK,
-//                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-//                    intent.setType("image/*");
-//                    startActivityForResult(
-//                            Intent.createChooser(intent, "Select File"),
-//                            Settings.SELECT_FILE);
-//                } else if (items[item].equals("Cancel")) {
-//                    dialog.dismiss();
-//                }
-//            }
-//        });
-//        builder.show();
+        mImageType  = imageType;
+        mUploadType = uploadType;
+        final CharSequence[] items = { "Take Photo", "Choose from Library", "Cancel" };
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setTitle("Add Photo!");
+        builder.setItems(items, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int item) {
+                if (items[item].equals("Take Photo")) {
+                    if (ContextCompat.checkSelfPermission(mParent, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        startActivityForResult(intent, REQUEST_CAMERA);
+                    } else {
+                        Toast.makeText(mParent, "You do not have permission to use the camera.", Toast.LENGTH_LONG).show();
+                    }
+                } else if (items[item].equals("Choose from Library")) {
+                    if (ContextCompat.checkSelfPermission(mParent, Manifest.permission.READ_EXTERNAL_STORAGE)
+                            == PackageManager.PERMISSION_GRANTED) {
+                        Intent intent = new Intent(
+                            Intent.ACTION_PICK,
+                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                        intent.setType("image/*");
+                        startActivityForResult(
+                            Intent.createChooser(intent, "Select File"),
+                            SELECT_FILE);
+                    } else {
+                        Toast.makeText(mParent, "You do not have permission to use the gallery.", Toast.LENGTH_LONG).show();
+                    }
+
+                } else if (items[item].equals("Cancel")) {
+                    dialog.dismiss();
+                }
+            }
+        });
+        builder.show();
     }
 
 
@@ -1764,23 +1879,23 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         if (path == null) {
             path = "";
         }
-//        try {
-//            String[] list = getAssets().list(path);
-//            if (list != null && list.length > 0) {
-//                for (String f : list) {
-//                    String n = f.toLowerCase();
-//                    if (n.startsWith(BoomtownChatMessage.EMOTICON)) {
-//                        String key = n.replace(BoomtownChatMessage.EMOTICON + BoomtownChatMessage.UNDERSCORE, "")
-//                                .replace(BoomtownChatMessage.Emoticon.EXT_PNG, "")
-//                                .replace(BoomtownChatMessage.Emoticon.EXT_GIF, "");
-//                        BoomtownChatMessage.Emoticon e = new BoomtownChatMessage.Emoticon(key, path + BoomtownChatMessage.SLASH + f);
-//                        ret.put(key, e);
-//                    }
-//                }
-//            }
-//        } catch (IOException e) {
-//            Log.e(TAG, Log.getStackTraceString(e));
-//        }
+        try {
+            String[] list = mParent.getAssets().list(path);
+            if (list != null && list.length > 0) {
+                for (String f : list) {
+                    String n = f.toLowerCase();
+                    if (n.startsWith(BoomtownChatMessage.EMOTICON)) {
+                        String key = n.replace(BoomtownChatMessage.EMOTICON + BoomtownChatMessage.UNDERSCORE, "")
+                                .replace(BoomtownChatMessage.Emoticon.EXT_PNG, "")
+                                .replace(BoomtownChatMessage.Emoticon.EXT_GIF, "");
+                        BoomtownChatMessage.Emoticon e = new BoomtownChatMessage.Emoticon(key, path + BoomtownChatMessage.SLASH + f);
+                        ret.put(key, e);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
         return ret;
     }
 

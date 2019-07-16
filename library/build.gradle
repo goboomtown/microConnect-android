@@ -1,5 +1,6 @@
 apply plugin: 'idea'
 apply plugin: 'com.android.library'
+apply plugin: 'com.kezong.fat-aar'
 
 android {
     def versionMajor = 2
@@ -20,6 +21,9 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
     buildTypes {
+        debug {
+            minifyEnabled false
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -68,20 +72,44 @@ configurations {
 }
 
 dependencies {
-    compile "com.android.support:support-v4:$android_support_lib_version"
-    compile("com.android.support:appcompat-v7:$android_support_lib_version") {
+//    implementation fileTree(dir: 'libs', include: ['*.jar'])
+//    implementation fileTree(dir: 'libs', include: ['*.aar'])
+
+    implementation "com.android.support:support-v4:$android_support_lib_version"
+    implementation("com.android.support:appcompat-v7:$android_support_lib_version") {
         exclude module: 'support-v4'
     }
 
-//    implementation project(':boomtown-boomtownchat-android')
+//    api (name:'boomtownchat', ext:'aar') {
+//        transitive = true
+//    }
+
+//    implementation project(':boomtown-boomtownchat-android') {
+//        transitive=true
+//    }
+    embed project(path: ':boomtown-boomtownchat-android', configuration:'default')
+    compileOnly project(path: ':boomtown-boomtownchat-android', configuration:'default')
 
     // flow layout
-    implementation "com.wefika:flowlayout:0.4.1"
+//    implementation "com.wefika:flowlayout:0.4.1"
+    embed "com.wefika:flowlayout:0.4.1"
+    compileOnly "com.wefika:flowlayout:0.4.1"
 
-    compile "com.squareup.okhttp3:okhttp:3.2.0"
-    api "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
-    api "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
-    compile "joda-time:joda-time:$jodatime_version"
+//    implementation "com.squareup.okhttp3:okhttp:3.2.0"
+    embed "com.squareup.okhttp3:okhttp:3.2.0"
+    compileOnly "com.squareup.okhttp3:okhttp:3.2.0"
+
+//    api "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
+    embed "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
+    compileOnly "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
+
+//    api "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
+    embed "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
+    compileOnly "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
+
+//    implementation "joda-time:joda-time:$jodatime_version"
+    embed "joda-time:joda-time:$jodatime_version"
+    compileOnly "joda-time:joda-time:$jodatime_version"
 
 //    compileOnly 'com.android.support:appcompat-v7:' + global_supportLibVersion;
 //    compile "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
@@ -89,10 +117,16 @@ dependencies {
 //    api 'org.igniterealtime.smack:smack-android-extensions:4.3.1'
 //    api 'org.igniterealtime.smack:smack-tcp:4.3.1'
     // animated GIFs
-    api 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
+//    api 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
+    embed 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
+    compileOnly 'pl.droidsonroids.gif:android-gif-drawable:1.2.8'
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     testCompile "junit:junit:$junit_version"
+
+//    compile ('com.foo:boomtownchat:1.0.0@aar'){
+//        transitive=true
+//    }
 }

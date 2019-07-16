@@ -34,4 +34,13 @@
     <string name="cdesc_an_icon_representing_a_chat_room">an icon representing a chat room</string>
     <string name="kb_empty_preview_message">Click here to go to the knowledge base article.</string>
 
+    <string name="warn_unable_to_obtain_chat_server_information">Unable to obtain chat server information.</string>
+
+    <string name="label_uploading_photo">Uploading photo</string>
+    <string name="label_take_photo">Take Photo</string>
+    <string name="label_choose_from_library">Choose from Library</string>
+    <string name="title_select_file">Select File</string>
+    <string name="cancel">Cancel</string>
+    <string name="title_add_photo">Add Photo!</string>
+
 </resources>

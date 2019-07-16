@@ -29,6 +29,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 //import com.goboomtown.BoomtownMember.R;
+import com.goboomtown.chat.BoomtownChat;
+import com.goboomtown.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.chat.activity.BoomtownComm;
 //import com.goboomtown.api.BoomtownAPI;
 //import com.goboomtown.api.Constants;
@@ -39,8 +41,6 @@ import com.goboomtown.microconnect.chat.activity.BoomtownComm;
 //import com.goboomtown.core.activity.BaseActivity;
 //import com.goboomtown.core.widget.WebImageView;
 //import com.goboomtown.model.BoomtownComm;
-import com.goboomtown.microconnect.chat.chat.BoomtownChat;
-import com.goboomtown.microconnect.chat.chat.BoomtownChatMessage;
 import com.goboomtown.microconnect.chat.fragment.WebViewFragment;
 import com.goboomtown.microconnect.R;
 import com.goboomtown.microconnect.btconnecthelp.widget.WebImageView;

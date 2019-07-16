@@ -1,2 +1,3 @@
 configurations.maybeCreate("default")
 artifacts.add("default", file('microconnect-release-2.0.0.aar'))
+//artifacts.add("default", file('boomtownchat.aar'))

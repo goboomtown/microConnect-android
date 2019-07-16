@@ -8,13 +8,14 @@ import android.util.Log;
 import android.view.View;
 import android.widget.FrameLayout;
 
+import com.goboomtown.microconnect.btconnecthelp.activity.BTConnectHelpBaseActivity;
 import com.goboomtown.microconnect.btconnecthelp.activity.ChatFragment;
 import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends BTConnectHelpBaseActivity // AppCompatActivity
         implements BTConnectHelpButton.BTConnectHelpButtonListener {
 
     public static final String TAG = "MainActivity";
