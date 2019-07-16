@@ -1,5 +1,2 @@
 include ':microconnect-aar'
 project(":microconnect-aar").projectDir = new File(settingsDir, "microconnect-aar")
-
-//include ':boomtownchat-aar'
-//project(":boomtownchat-aar").projectDir = new File(settingsDir, "microconnect-aar")

@@ -81,22 +81,12 @@ configurations {
 }
 
 dependencies {
-//    implementation fileTree(dir: 'libs', include: ['*.jar'])
-//    implementation fileTree(dir: 'libs', include: ['*.aar'])
-
-//    implementation 'com.android.support:multidex:1.0.1'
-
     implementation project(':microconnect-aar')
 
     implementation "com.android.support:support-v4:$android_support_lib_version"
     implementation("com.android.support:appcompat-v7:$android_support_lib_version") {
         exclude module: 'support-v4'
     }
-
-//    implementation('com.squareup.okhttp3:okhttp:3.2.0')
-//    api "org.igniterealtime.smack:smack-android-extensions:$smack_lib_version"
-//    api "org.igniterealtime.smack:smack-tcp:$smack_lib_version"
-//    implementation "joda-time:joda-time:$jodatime_version"
 
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'

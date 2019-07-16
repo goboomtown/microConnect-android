@@ -41,6 +41,10 @@ allprojects {
     ext.smack_lib_version = "4.3.1" //"4.1.0"
 }
 
+subprojects {
+    tasks.withType(Javadoc).all { enabled = false }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

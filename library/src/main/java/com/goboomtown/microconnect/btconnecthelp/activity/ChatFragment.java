@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -22,6 +24,7 @@ import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.CursorLoader;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.text.Editable;
@@ -52,11 +55,12 @@ import android.widget.Toast;
 
 import com.goboomtown.chat.BoomtownChat;
 import com.goboomtown.chat.BoomtownChatMessage;
-import com.goboomtown.microconnect.chat.activity.BaseActivity;
-import com.goboomtown.microconnect.chat.activity.KBActivity;
+import com.goboomtown.activity.BaseActivity;
+import com.goboomtown.activity.KBActivity;
 import com.goboomtown.microconnect.btconnecthelp.api.BTConnectAPI;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectChat;
 import com.goboomtown.microconnect.btconnecthelp.model.BTConnectIssue;
+import com.goboomtown.microconnect.btconnecthelp.util.ExifUtil;
 import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
 import com.goboomtown.microconnect.R;
 
@@ -272,9 +276,9 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         initControls(view);
 //        initLayoutListeners();
 
-
 //        emoticonsMap = getChatEmoticons();
-        emoticonsMap = BoomtownChat.sharedInstance().chatEmoticons;
+//        emoticonsMap =  BoomtownChat.sharedInstance().chatEmoticons;
+        emoticonsMap = new HashMap<String, BoomtownChatMessage.Emoticon>(BoomtownChat.sharedInstance().chatEmoticons);
         acPredictor = new AutocompletePredictor(new WeakReference<Activity>(mParent),
                 new WeakReference<ListView>(mAutocompleteListView),
                 new WeakReference<ListView>(messagesContainer),
@@ -488,14 +492,23 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         if (senderDisplayName == null)
             senderDisplayName = senderId;
 
-        mMentions.add("@all");
-        for (String key : mChatRecord.participants_eligible.keySet()) {
-            Map<String, String> participant = (Map<String, String>) mChatRecord.participants_eligible.get(key);
-            mMentions.add(participant.get("alias"));
-        }
-        Collections.sort(mMentions);
+//        mMentions.add("@all");
+//        for (String key : mChatRecord.participants_eligible.keySet()) {
+//            Map<String, String> participant = (Map<String, String>) mChatRecord.participants_eligible.get(key);
+//            mMentions.add(participant.get("alias"));
+//        }
+//        Collections.sort(mMentions);
 
-        BoomtownChat.sharedInstance().participants_eligible = mChatRecord.participants_eligible;
+        acPredictor.addMention("@all");
+        if (mChatRecord != null ) {
+            for (String key : mChatRecord.participants_eligible.keySet()) {
+                Map<String, String> participant = (Map<String, String>) mChatRecord.participants_eligible.get(key);
+                acPredictor.addMention(participant.get("alias"));
+            }
+            Collections.sort(acPredictor.getMentions());
+
+            BoomtownChat.sharedInstance().participants_eligible = mChatRecord.participants_eligible;
+        }
 
         BoomtownChat.sharedInstance().setListener(this);
 //        BoomtownChat.sharedInstance().listener = this;
@@ -1324,40 +1337,43 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
 
     public void handlePhotoFromFile(Intent data) {
-//        mImage = null;
-//        Uri selectedImageUri = data.getData();
-//        String[] projection = {MediaStore.MediaColumns.DATA};
-//        CursorLoader cursorLoader = new CursorLoader(this, selectedImageUri, projection, null, null,
-//                null);
-//        Cursor cursor = cursorLoader.loadInBackground();
-//        int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-//        cursor.moveToFirst();
-//
-//        String selectedImagePath = cursor.getString(column_index);
-//
-//        Bitmap bm;
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//        options.inJustDecodeBounds = true;
-//        BitmapFactory.decodeFile(selectedImagePath, options);
-//        final int REQUIRED_SIZE = 200;
-//        int scale = 1;
-//        while (options.outWidth / scale / 2 >= REQUIRED_SIZE
-//                && options.outHeight / scale / 2 >= REQUIRED_SIZE)
-//            scale *= 2;
-//        options.inSampleSize = scale;
-//        options.inJustDecodeBounds = false;
-//        bm = BitmapFactory.decodeFile(selectedImagePath, options);
-//
-//        mOriginalImage = ExifUtil.rotateBitmap(selectedImagePath, bm);
-//
-//        mImage = getclip(mOriginalImage);
-//        upload();
+        mImage = null;
+        Uri selectedImageUri = data.getData();
+        String[] projection = {MediaStore.MediaColumns.DATA};
+        CursorLoader cursorLoader = new CursorLoader(mParent, selectedImageUri, projection, null, null,
+                null);
+        Cursor cursor = cursorLoader.loadInBackground();
+        int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+        cursor.moveToFirst();
+
+        String selectedImagePath = cursor.getString(column_index);
+
+        Bitmap bm;
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(selectedImagePath, options);
+        final int REQUIRED_SIZE = 200;
+        int scale = 1;
+        while (options.outWidth / scale / 2 >= REQUIRED_SIZE
+                && options.outHeight / scale / 2 >= REQUIRED_SIZE)
+            scale *= 2;
+        options.inSampleSize = scale;
+        options.inJustDecodeBounds = false;
+        bm = BitmapFactory.decodeFile(selectedImagePath, options);
+
+        mOriginalImage = ExifUtil.rotateBitmap(selectedImagePath, bm);
+
+        mImage = getclip(mOriginalImage);
+        upload();
     }
 
 
     public void upload() {
 //        BoomtownAPI.sharedInstance().sendNotification(this, BoomtownAPI.kImageCaptured);
         switch (mUploadType) {
+            case UPLOAD_TYPE_NONE:
+                System.out.println("upload");
+                break;
             case UPLOAD_TYPE_AVATAR:
                 showProgressWithMessage("Uploading photo");
 //                BoomtownAPI.sharedInstance().apiImageUpload(getApplicationContext(), mImage, mImageType);
