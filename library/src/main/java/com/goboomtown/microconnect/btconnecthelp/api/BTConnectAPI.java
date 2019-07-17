@@ -1,6 +1,7 @@
 package com.goboomtown.microconnect.btconnecthelp.api;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Base64;
 import android.util.Log;
 
@@ -9,6 +10,7 @@ import com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -16,6 +18,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +27,7 @@ import javax.crypto.Mac;
 import okhttp3.Callback;
 import okhttp3.Headers;
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -37,6 +41,8 @@ public class BTConnectAPI {
 
     public static String BTConnectAPIBaseURL   =  "https://api.goboomtown.com";
     public static String kEndpoint             = "/api/v2";
+    public static String kV2kEndpoint          = "/api/v2";
+    public static String kV3Endpoint           = "/api/v3";
 
     private static BTConnectAPI shared_instance = null;
 
@@ -110,6 +116,43 @@ public class BTConnectAPI {
 
         client.newCall(request).enqueue(callback);
     }
+
+    public static void post(Context context, String uri, JSONObject jsonParams, Bitmap image, String name, Callback callback) {
+        String requestUrl = String.format("%s%s", BTConnectAPIBaseURL, uri);
+        Bitmap inImage = image;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        inImage.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] imageData = baos.toByteArray();
+
+        MultipartBody.Builder formBuilder = new MultipartBody.Builder();
+        formBuilder.setType(MultipartBody.FORM);
+        formBuilder.addFormDataPart("file-data", name, RequestBody.create(MediaType.parse("image/jpeg"), imageData));
+        if ( jsonParams != null ) {
+            Iterator<String> iter = jsonParams.keys();
+            while ( iter.hasNext() ) {
+                String key = iter.next();
+                try {
+                    formBuilder.addPart(Headers.of("Content-Disposition", "form-data; name=\"" + key + "\""),
+                            RequestBody.create(null, jsonParams.getString(key)));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        RequestBody formBody = formBuilder.build();
+        Request request = new Request.Builder()
+                .url(requestUrl)
+                .headers(Headers.of(addHeaders(uri)))
+                .post(formBody)
+                .build();
+        // redact password before logging
+//        JSONObject logParams = Utils.redactProtectedJSON(jsonParams, Utils.DEFAULT_PROTECTED_JSON_PARAMS, null);
+//        if (logParams != null) {
+//            Log.v(TAG, "POST w/image (" + requestUrl + ") image length: " + imageData.length + ", with params: " + logParams.toString());
+//        }
+        client.newCall(request).enqueue(callback);
+    }
+
 
     public static void get(Context context, String uri, Callback callback) {
         String requestUrl = String.format("%s%s", BTConnectAPIBaseURL, uri);

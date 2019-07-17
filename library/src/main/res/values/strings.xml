@@ -43,4 +43,7 @@
     <string name="cancel">Cancel</string>
     <string name="title_add_photo">Add Photo!</string>
 
+    <string name="warn_unable_to_add_attachmemt">Unable to add attachment.</string>
+    <string name="warn_unable_to_retrieve_kb">Unable to retrieve knowledge base article</string>
+
 </resources>

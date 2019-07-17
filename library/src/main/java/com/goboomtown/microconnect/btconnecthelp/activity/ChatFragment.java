@@ -684,6 +684,15 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         messageEdit.addTextChangedListener(new TextWatcher() {
 
             public void afterTextChanged(Editable s) {
+//                if (s.toString().length() == 0) {
+//                    dismissKeyboard();
+//                    messagesContainer.setEnabled(true);
+//                    mAutocompleteListView.setVisibility(View.GONE);
+//                    chatSendButton.setEnabled(false);
+//                } else {
+//                    chatSendButton.setEnabled(true);
+//                    showAutocompleteList(s.toString());
+//                }
                 if (s.toString().length() == 0) {
                     dismissKeyboard();
                     messagesContainer.setEnabled(true);
@@ -691,8 +700,9 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                     chatSendButton.setEnabled(false);
                 } else {
                     chatSendButton.setEnabled(true);
-                    showAutocompleteList(s.toString());
+                    acPredictor.showAutoCompleteList(s);
                 }
+
             }
 
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -1331,7 +1341,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
             e.printStackTrace();
         }
         mOriginalImage = thumbnail;
-        mImage = getclip(thumbnail);
+        mImage = mOriginalImage; // getclip(thumbnail);
         upload();
     }
 
@@ -1363,7 +1373,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
         mOriginalImage = ExifUtil.rotateBitmap(selectedImagePath, bm);
 
-        mImage = getclip(mOriginalImage);
+        mImage = mOriginalImage; // getclip(mOriginalImage);
         upload();
     }
 
@@ -1372,7 +1382,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 //        BoomtownAPI.sharedInstance().sendNotification(this, BoomtownAPI.kImageCaptured);
         switch (mUploadType) {
             case UPLOAD_TYPE_NONE:
-                System.out.println("upload");
+                commPutFile(mCommId, mImage);
                 break;
             case UPLOAD_TYPE_AVATAR:
                 showProgressWithMessage("Uploading photo");
@@ -1491,6 +1501,85 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
         return dest;
     }
+
+
+    public void commPutFile(String commId, Bitmap image) {
+        String url = BTConnectAPI.kV3Endpoint + "/chat/microFilePut";
+
+        JSONObject params = new JSONObject();
+        try {
+            params.put("id", commId);
+            params.put("customers_users_id",BTConnectAPI.sharedInstance().membersUsersId);
+            params.put("file_tag", "attachment");
+        } catch (JSONException e) {
+            Log.e(TAG, Log.getStackTraceString(e));
+        }
+        BTConnectAPI.post(getContext(), url, params, image, "image", new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                hideProgress();
+                warn(getString(R.string.app_name), getString(R.string.warn_unable_to_add_attachmemt));
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                boolean success = false;
+
+                hideProgress();
+                String responseBody = response.body().string();
+                JSONObject jsonObject = BTConnectAPI.successJSONObject(responseBody);
+                if (jsonObject instanceof JSONObject) {
+                    if ( jsonObject.has("results") ) {
+                        try {
+                            JSONArray resultsArray = jsonObject.getJSONArray("results");
+                            if ( resultsArray.length() > 0 ) {
+                                JSONObject resultJSON = resultsArray.getJSONObject(0);
+
+                                String payload = resultJSON.toString();
+                                if (payload != null) {
+                                    Log.d(TAG, payload);
+                                    if (mInRoom) {
+                                        BoomtownChat.sharedInstance().sendGroupchatMessage(payload, true);
+                                    }
+
+                                }
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        warn(getString(R.string.app_name), getString(R.string.warn_unable_to_add_attachmemt));
+                    }
+                }
+            }
+        });
+    }
+
+    public void retrieveKB(String id) {
+        String url = BTConnectAPI.kV3Endpoint + "/kb/get";
+
+        BTConnectAPI.get(getContext(), url, new Callback() {
+
+            @Override
+            public void onFailure(Call call, IOException e) {
+                warn(getString(R.string.app_name), getString(R.string.warn_unable_to_retrieve_kb));
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                boolean success = false;
+
+                JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
+                if (jsonObject instanceof JSONObject) {
+                    if ( jsonObject.has("results")) {
+
+                    }
+                }
+            }
+        });
+    }
+
 
     public static class AutocompletePredictor {
 
