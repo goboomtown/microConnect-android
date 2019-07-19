@@ -73,8 +73,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -165,6 +167,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
     private AlertDialog alertDialog;
     public View mView;
     private Boolean mInSetup = false;
+    public String kbTitle;
 
     public Activity mParent;
     public Boolean mUploadRequested;
@@ -323,12 +326,8 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
     @Override
     public void onClickKB(View v, String kbUrl, String kbTitle) {
-        final String url = kbUrl;
-//        getActivity().runOnUiThread(() -> showWebView(url));
-        Intent intent = new Intent(mParent, KBActivity.class);
-        intent.putExtra(KBActivity.ARG_URL, url);
-        intent.putExtra(KBActivity.ARG_TITLE, kbTitle);
-        startActivity(intent);
+        this.kbTitle = kbTitle;
+        retrieveKB(kbUrl);
     }
 
     @Override
@@ -861,18 +860,23 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
 
     private void warn(String title, String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), AlertDialog.THEME_HOLO_LIGHT);
-        builder.setTitle(title);
-        builder.setMessage(message);
-        builder.setCancelable(false);
+        mParent.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), AlertDialog.THEME_HOLO_LIGHT);
+                builder.setTitle(title);
+                builder.setMessage(message);
+                builder.setCancelable(false);
 
-        builder.setPositiveButton("OK", null);
+                builder.setPositiveButton("OK", null);
 //        builder.setNegativeButton("CANCEL", null);
 
-        final AlertDialog dlg = builder.create();
-        if (dlg != null) {
-            dlg.show();
-        }
+                final AlertDialog dlg = builder.create();
+                if (dlg != null) {
+                    dlg.show();
+                }
+            }
+        });
     }
 
     public void addMention(String mention) {
@@ -1382,6 +1386,8 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 //        BoomtownAPI.sharedInstance().sendNotification(this, BoomtownAPI.kImageCaptured);
         switch (mUploadType) {
             case UPLOAD_TYPE_NONE:
+//                retrieveKB("39e163ce-68f2-40b8-977e-dc72f5c33163/8f7f4990-e5e9-4ffc-b3ff-1dd300844512");
+                retrieveKB("8745d074-cc4f-48b8-9ec8-278483ced3e8/e91d67cf-d1c1-4c8f-9b84-68f49aa143c2");
                 commPutFile(mCommId, mImage);
                 break;
             case UPLOAD_TYPE_AVATAR:
@@ -1557,7 +1563,13 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
     }
 
     public void retrieveKB(String id) {
-        String url = BTConnectAPI.kV3Endpoint + "/kb/get";
+//        String query = "";
+//        try {
+//            query = "/" + URLEncoder.encode(id, "utf-8");
+//        } catch (UnsupportedEncodingException e) {
+//            e.printStackTrace();
+//        }
+        String url = BTConnectAPI.kV3Endpoint + "/kb/get?id=" + id;
 
         BTConnectAPI.get(getContext(), url, new Callback() {
 
@@ -1573,8 +1585,15 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                 JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                 if (jsonObject instanceof JSONObject) {
                     if ( jsonObject.has("results")) {
-
+//                        success = true;
+//                        Intent intent = new Intent(mParent, KBActivity.class);
+//                        intent.putExtra(KBActivity.ARG_URL, url);
+//                        intent.putExtra(KBActivity.ARG_TITLE, this.kbTitle);
+//                        startActivity(intent);
                     }
+                }
+                if ( success == false ) {
+                    warn(getString(R.string.app_name), getString(R.string.warn_unable_to_retrieve_kb));
                 }
             }
         });
