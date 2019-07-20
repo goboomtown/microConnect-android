@@ -1387,7 +1387,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
         switch (mUploadType) {
             case UPLOAD_TYPE_NONE:
 //                retrieveKB("39e163ce-68f2-40b8-977e-dc72f5c33163/8f7f4990-e5e9-4ffc-b3ff-1dd300844512");
-                retrieveKB("8745d074-cc4f-48b8-9ec8-278483ced3e8/e91d67cf-d1c1-4c8f-9b84-68f49aa143c2");
+//                retrieveKB("8745d074-cc4f-48b8-9ec8-278483ced3e8/e91d67cf-d1c1-4c8f-9b84-68f49aa143c2");
                 commPutFile(mCommId, mImage);
                 break;
             case UPLOAD_TYPE_AVATAR:

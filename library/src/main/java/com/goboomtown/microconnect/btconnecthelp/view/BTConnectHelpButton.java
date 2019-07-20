@@ -141,7 +141,13 @@ public class BTConnectHelpButton extends View {
 
     private void clicked() {
         Log.d("getHelp", "Clicked");
-        showHelpDialog();
+        if ( providerId != null ) {
+            showHelpDialog();
+        } else {
+            if (mListener != null) {
+                mListener.helpButtonDidFailWithError(mContext.getString(R.string.error_unable_to_get_provider_info), "");
+            }
+        }
     }
 
     /**
@@ -524,6 +530,7 @@ public class BTConnectHelpButton extends View {
 
     private void getProvider() {
         String uri = String.format("%s/providers/get", BTConnectAPI.kEndpoint);
+        providerId = null;
 
         BTConnectAPI.get(getContext(), uri, new Callback() {
 

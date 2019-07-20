@@ -12,26 +12,26 @@ import android.support.v4.graphics.drawable.RoundedBitmapDrawableFactory;
 import android.util.AttributeSet;
 
 public class WebImageView extends android.support.v7.widget.AppCompatImageView {
-	
+
 	private Drawable 				mPlaceholder, mImage;
 	private RoundedBitmapDrawable 	mRoundImage;
     private DownloadTask 			mTask;
 	public  Boolean					mRectangular = false;
 
     private static final HashMap<String, Drawable> sImageCache = new HashMap<String, Drawable>();
-	
+
 	public WebImageView(Context context) {
 		this(context, null);
 	}
-	
+
 	public WebImageView(Context context, AttributeSet attrs) {
 		this(context, attrs, 0);
 	}
-	
+
 	public WebImageView(Context context, AttributeSet attrs, int defaultStyle) {
 		super(context, attrs, defaultStyle);
 	}
-	
+
 	public void setPlaceholderImage(Drawable drawable) {
 		mPlaceholder = drawable;
 		if(mImage == null) {
@@ -44,7 +44,7 @@ public class WebImageView extends android.support.v7.widget.AppCompatImageView {
 			setImageDrawable(mPlaceholder);
 		}
 	}
-	
+
 	public void setImageUrl(String url) {
         if(mTask != null) mTask.cancel(true);
         if(sImageCache.containsKey(url)) {
@@ -89,7 +89,7 @@ public class WebImageView extends android.support.v7.widget.AppCompatImageView {
 //			return getBitmap(params[0]);
 			return null;
 		}
-		
+
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			if ( result != null ) {
