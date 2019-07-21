@@ -164,6 +164,14 @@ public class BTConnectAPI {
         client.newCall(request).enqueue(callback);
     }
 
+    public static void getImage(Context context, String uri, Callback callback) {
+        Request request = new Request.Builder()
+                .url(uri)
+                .build();
+
+        client.newCall(request).enqueue(callback);
+    }
+
     private static HashMap<String, String> addHeaders(String uri) {
         HashMap<String, String> headerMap = new HashMap<String, String>();
 
