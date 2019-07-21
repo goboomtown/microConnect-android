@@ -18,11 +18,11 @@
 1. Click Finish.
 
  or -
-1. Download the AAR file from [github](https://github.com/goboomtown/microConnect-android/raw/master/dist/aar/microconnect-release-1.2.0.aar).
+1. Download the AAR file from [github](https://github.com/goboomtown/microConnect-android/raw/master/dist/aar/microconnect-release-2.0.0.aar).
 1. From within Android Studio, open File -> New -> New Module
 1. Choose Import .JAR/.AAR Package, click Next
-1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-1.2.0.aar
-1. The "Subproject name" should be auto-filled to "microConnect-android-release-1.2.0" once you choose this AAR file path.
+1. Enter the filename with full path - use "..." to browse to the file location where you downloaded microConnect-android-release-2.0.0.aar
+1. The "Subproject name" should be auto-filled to "microConnect-android-release-2.0.0" once you choose this AAR file path.
 1. Click Finish
 
 ## API Key Generation
@@ -86,7 +86,7 @@ _Note:_ An example Android application that uses this library may be found in th
        android:paddingRight="@dimen/activity_horizontal_margin"
        android:paddingTop="@dimen/activity_vertical_margin"
        tools:context="com.goboomtown.boomtowntest.MainActivity">
-   
+
        <com.goboomtown.microconnect.btconnecthelp.view.BTConnectHelpButton
            android:id="@+id/helpButton"
            android:layout_width="300dp"
@@ -98,7 +98,7 @@ _Note:_ An example Android application that uses this library may be found in th
            app:exampleColor="#33b5e5"
            app:exampleDimension="24sp"
            app:exampleString="" />
-   
+
        <FrameLayout
            xmlns:android="http://schemas.android.com/apk/res/android"
            xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -106,7 +106,7 @@ _Note:_ An example Android application that uses this library may be found in th
            android:layout_width="match_parent"
            android:layout_height="match_parent"
            android:visibility="gone" />
-   
+
    </RelativeLayout>
 
 ```
@@ -120,8 +120,8 @@ mFragmentContainer  = (FrameLayout)         findViewById(R.id.fragment_container
 mHelpButton.setListener(this);
 
 mHelpButton.memberID 			= "WA3QMJ";
-mHelpButton.memberUserID 		= "WA3QMJ-5XK"; //@"WA3QMJ-2QE";
-mHelpButton.memberLocationID 	= "WA3QMJ-FYH"; //@"WA3QMJ-JVE";
+mHelpButton.memberUserID 		= "WA3QMJ-5XK";
+mHelpButton.memberLocationID 	= "WA3QMJ-FYH";
 
 mHelpButton.supportWebsiteURL 	= Uri.parse("http://example.com");
 mHelpButton.supportEmailAddress  = "support@example.com";
@@ -143,7 +143,7 @@ myPrivData.put("private", "someEncryptedData");
 mHelpButton.advertiseServiceWithPublicData(myPubData, myPrivData);
 ```
 
-The lifecycle of advertiseServiceWithPublicData() will be managed by the BTConnectHelpButton class.  To 
+The lifecycle of advertiseServiceWithPublicData() will be managed by the BTConnectHelpButton class.  To
 manage the lifecycle yourself you can invoke BTConnectHelpButton#stopAdvertiseServiceWithPublicData().
 
 Two methods in BTConnectHelpButtonListener provide for insight into the broadcast of mDNS data:
