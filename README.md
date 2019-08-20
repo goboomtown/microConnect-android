@@ -214,6 +214,17 @@ The steps to build this library from source are:
 ```
 gradle build -x javadoc -x lint
 ```
+## Support for KnowledgeBase Articles
+
+In order to fully support KnowledgeBase articles within chat, you will need to add the KBActivity to your Android manifest:
+
+```
+<activity
+     android:name="com.goboomtown.activity.KBActivity"
+     android:configChanges="orientation|keyboardHidden|screenSize" />
+```
+
+Failure to do so will lead to an inevitable crash when attempting to view an article from within chat.
 
 ## Acknowledgements
 

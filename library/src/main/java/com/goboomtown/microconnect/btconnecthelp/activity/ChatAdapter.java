@@ -300,7 +300,7 @@ public class ChatAdapter extends BaseAdapter {
     public String kbUrl(final Context applicationContext, String kb_id) {
 //        AuthenticationStore authStore = AuthenticationStore.getInstance(applicationContext);
 //        final String authToken = authStore.getAuthToken();
-        String kbUrl = "";//String.format("%s?id=%s&authtoken=%s",BoomtownArticlePage, kb_id, authToken);
+        String kbUrl = kb_id; //String.format("%s?id=%s&authtoken=%s",BoomtownArticlePage, kb_id, authToken);
         return kbUrl;
     }
 

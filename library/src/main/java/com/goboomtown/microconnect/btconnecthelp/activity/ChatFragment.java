@@ -728,11 +728,13 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                 dismissKeyboard();
                 if ( mInRoom ) {
 //                    ((BaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+
                     selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
                     if (messageEdit != null) {
                         messageEdit.setText("");
                         scroll();
                     }
+
                 } else {
                     ((BaseActivity)mParent).showErrorMessage(null, mParent.getString(R.string.msg_not_in_room));
                 }
@@ -797,6 +799,7 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
                 Activity activity = getActivity();
                 if ( mParent instanceof BTConnectHelpBaseActivity ) {
 //                    ((BTConnectHelpBaseActivity) getActivity()).selectImage(getActivity(), 0, BaseActivity.UPLOAD_TYPE_NONE);
+
                     selectImage(mParent, 0, UPLOAD_TYPE_NONE);
                     if (messageEdit != null) {
                         messageEdit.setText("");
@@ -1584,12 +1587,22 @@ public class ChatFragment extends Fragment implements ChatAdapter.ChatAdapterCli
 
                 JSONObject jsonObject = BTConnectAPI.successJSONObject(response.body().string());
                 if (jsonObject instanceof JSONObject) {
-                    if ( jsonObject.has("results")) {
-//                        success = true;
-//                        Intent intent = new Intent(mParent, KBActivity.class);
-//                        intent.putExtra(KBActivity.ARG_URL, url);
-//                        intent.putExtra(KBActivity.ARG_TITLE, this.kbTitle);
-//                        startActivity(intent);
+                    if ( jsonObject.has("results") ) {
+                        try {
+                            JSONArray resultsJSON = jsonObject.getJSONArray("results");
+                            JSONObject result = resultsJSON.getJSONObject(0);
+                            success = true;
+                            String title = result.getString("title");
+                            String body = result.getString("body");
+                            String html = "<html><body>" + body + "</body></html>";
+                            Intent intent = new Intent(mParent, KBActivity.class);
+                            intent.putExtra(KBActivity.ARG_URL, "");
+                            intent.putExtra(KBActivity.ARG_HTML, html);
+                            intent.putExtra(KBActivity.ARG_TITLE, title);
+                            startActivity(intent);
+                        } catch (JSONException e) {
+
+                        }
                     }
                 }
                 if ( success == false ) {
